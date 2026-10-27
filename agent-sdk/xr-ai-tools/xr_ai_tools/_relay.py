@@ -16,15 +16,22 @@ class RelayHandlers:
     """Let a Relay caller wait for the handlers Relay runs in its own tasks.
 
     Relay returns a cancelled call to its caller before the handler task it started has
-    finished cancelling, so model work and its cleanup can outlive the caller. Pass each
-    handler through :meth:`track` or :meth:`track_stream`, then await :meth:`settled`
-    before the cancellation propagates.
+    finished cancelling, so model work and its cleanup can outlive the caller. Use it as
+    ``async with RelayHandlers() as handlers:`` around the Relay call and pass each handler
+    through :meth:`track` or :meth:`track_stream`; leaving the block, including by
+    cancellation, waits until those handlers have finished.
     """
 
     def __init__(self) -> None:
         self._running = 0
         self._idle = asyncio.Event()
         self._idle.set()
+
+    async def __aenter__(self) -> RelayHandlers:
+        return self
+
+    async def __aexit__(self, *_exc: object) -> None:
+        await self.settled()
 
     def track(self, handler: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
         async def tracked(*args: Any) -> T:

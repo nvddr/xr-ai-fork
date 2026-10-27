@@ -75,8 +75,7 @@ class Tool(Generic[RequestT, ResultT]):
         the handler has finished.
         """
 
-        handlers = RelayHandlers()
-        try:
+        async with RelayHandlers() as handlers:
             result = await typed.tool_execute(
                 self.name,
                 request,
@@ -84,9 +83,6 @@ class Tool(Generic[RequestT, ResultT]):
                 self._request_codec,
                 self._result_codec,
             )
-        finally:
-            # A cancelled call returns before Relay's handler task has stopped.
-            await handlers.settled()
         return result.result
 
     async def invoke(self, arguments: str) -> ToolInvocationResult:
