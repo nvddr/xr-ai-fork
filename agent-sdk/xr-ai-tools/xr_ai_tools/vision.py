@@ -15,7 +15,7 @@ from nemo_relay.codecs import OpenAIChatCodec
 from pydantic import BaseModel, Field, model_validator
 from xr_ai_models import VLMService
 
-from ._relay import headers_from_relay
+from ._relay import RelayHandlers, headers_from_relay
 from ._vision import (
     VLM_CALL_NAME,
     image_sanitizer,
@@ -125,20 +125,25 @@ class _ImageInference:
                 text="Image input unavailable — please select it again.",
                 available=False,
             )
+        handlers = RelayHandlers()
         try:
             with image_sanitizer():
-                response = await nemo_relay.llm.execute(
-                    VLM_CALL_NAME,
-                    relay_request(
-                        self.system_prompt,
-                        [(image.uri, timestamp_us) for image, timestamp_us in inputs],
-                        query,
-                    ),
-                    self._ask_vlm,
-                    model_name=VLM_CALL_NAME,
-                    codec=OpenAIChatCodec(),
-                    response_codec=OpenAIChatCodec(),
-                )
+                try:
+                    response = await nemo_relay.llm.execute(
+                        VLM_CALL_NAME,
+                        relay_request(
+                            self.system_prompt,
+                            [(image.uri, timestamp_us) for image, timestamp_us in inputs],
+                            query,
+                        ),
+                        handlers.track(self._ask_vlm),
+                        model_name=VLM_CALL_NAME,
+                        codec=OpenAIChatCodec(),
+                        response_codec=OpenAIChatCodec(),
+                    )
+                finally:
+                    # A cancelled call returns before Relay's handler task has stopped.
+                    await handlers.settled()
             text = visible_text(response_text(response))
             if not text:
                 return ImageQueryResult(
@@ -167,35 +172,45 @@ class _ImageInference:
             _LOGGER.warning("Image input could not be resolved: %s", error)
             yield ImageQueryChunk(text="Image input unavailable — please select it again.")
             return
+        handlers = RelayHandlers()
+        stream = None
         try:
             started_at = time.monotonic()
             _LOGGER.info("Image VLM stream request started image_count=%d", len(inputs))
             with image_sanitizer():
-                stream = await nemo_relay.llm.stream_execute(
-                    VLM_CALL_NAME,
-                    relay_request(
-                        self.system_prompt,
-                        [(image.uri, timestamp_us) for image, timestamp_us in inputs],
-                        query,
-                    ),
-                    self._stream_vlm,
-                    lambda chunk: fragments.append(stream_text(chunk)),
-                    lambda: openai_response("".join(fragments)),
-                    model_name=VLM_CALL_NAME,
-                    codec=OpenAIChatCodec(),
-                    response_codec=OpenAIChatCodec(),
-                )
-                async for chunk in stream:
-                    text = stream_text(chunk)
-                    if text:
-                        if not emitted_output:
-                            _LOGGER.info(
-                                "Image VLM stream first token latency_ms=%.1f image_count=%d",
-                                (time.monotonic() - started_at) * 1000,
-                                len(inputs),
-                            )
-                        emitted_output = True
-                        yield ImageQueryChunk(text=text)
+                try:
+                    stream = await nemo_relay.llm.stream_execute(
+                        VLM_CALL_NAME,
+                        relay_request(
+                            self.system_prompt,
+                            [(image.uri, timestamp_us) for image, timestamp_us in inputs],
+                            query,
+                        ),
+                        handlers.track_stream(self._stream_vlm),
+                        lambda chunk: fragments.append(stream_text(chunk)),
+                        lambda: openai_response("".join(fragments)),
+                        model_name=VLM_CALL_NAME,
+                        codec=OpenAIChatCodec(),
+                        response_codec=OpenAIChatCodec(),
+                    )
+                    async for chunk in stream:
+                        text = stream_text(chunk)
+                        if text:
+                            if not emitted_output:
+                                _LOGGER.info(
+                                    "Image VLM stream first token latency_ms=%.1f image_count=%d",
+                                    (time.monotonic() - started_at) * 1000,
+                                    len(inputs),
+                                )
+                            emitted_output = True
+                            yield ImageQueryChunk(text=text)
+                finally:
+                    # Close Relay's stream so its handler stops, then wait for that handler,
+                    # which Relay runs in its own task and does not wait for on cancellation.
+                    close = getattr(stream, "aclose", None)
+                    if close is not None:
+                        await close()
+                    await handlers.settled()
         except Exception:
             _LOGGER.exception("Image VLM stream failed")
             if not emitted_output:
