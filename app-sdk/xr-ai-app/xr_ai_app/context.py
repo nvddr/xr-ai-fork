@@ -62,7 +62,7 @@ def clip(text: str, budget_bytes: int, *, keep: Literal["start", "end"] = "start
 
 @runtime_checkable
 class ContextChannel(Protocol):
-    """Anything that renders text for a participant: a channel, or a component's own (``voice.dialogue``)."""
+    """Anything that renders text for a participant: a channel, or a component's own view."""
 
     @property
     def name(self) -> str: ...

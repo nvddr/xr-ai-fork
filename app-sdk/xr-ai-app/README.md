@@ -17,7 +17,7 @@ private `xr_ai_app._base` package; its written contracts are
 
 | Module | What |
 |---|---|
-| `xr_ai_app` | for every app: `App`, `Component`, `Participant`, `Turn`, `Session`, `current_turn`, `Hub`, `Frame`, `FrameStream`, `Voice`, `TextSink`, `output_started`, `Role` (routing by hand is `role.decide`), `tool`, context channels (`ContextLog`, `ContextValue`) |
+| `xr_ai_app` | for every app: `App`, `Component`, `Participant`, `Turn`, `Session`, `current_turn`, `Hub`, `Frame`, `FrameStream`, `TextSink`, `output_started`, `Role` (routing by hand is `role.decide`), `tool`, context channels (`ContextLog`, `ContextValue`) |
 | `xr_ai_app.context` | `render` (the listed channels as the text a model reads) and the channel protocol |
 | `xr_ai_app.trace` | trace events with causal ids, sinks, NeMo Relay export; `emit`, `span` for your own code |
 | `xr_ai_app.clock` | `now`, `wall_us`, `held`: time that stays right on the devkit's virtual clock |
@@ -31,7 +31,7 @@ The core classes, and every public name each one has
 | Class | Public names |
 |---|---|
 | `App` | `App.from_config`, `app.settings`, `app.role`, `app.add`, `app.on_turn`, `app.on_start`, `app.state`, `app.participants`, `app.trace`, `app.run`, `app.start`, `app.stop`, `app.test_session` |
-| `Component` | `self.app`, `self.spawn`, and the hooks `on_start`, `on_participant_enrolled`, `on_participant_unenrolled`, `on_stop` |
+| `Component` | `self.app`, `self.spawn`, and the hooks `on_start`, `on_participant_enrolled`, `before_turn` (each user turn, before the turn handler), `on_participant_unenrolled`, `on_stop` |
 | `Participant` | `p.id`, `p.name`, `p.connected`, `p.frames`, `p.state`, `p.session`, `p.say`, `p.reply`, `p.withdraw`, `p.spawn`, `p.cancel`, `p.artifacts` |
 | `FrameStream` | `frames.current` (one frame now: a fresh streamed frame, or one picture asked of the device), `frames.every` (a frame per tick, streamed or, on demand, a picture) |
 | `Session` | `session.id`, `session.state` |
@@ -42,8 +42,8 @@ does both and handles signals; the stop sequence is in
 `docs/LIFECYCLE_CONTRACT.md`). `p.connected` is false while a `Persistent`
 participant has no device connected. `p.artifacts` writes files under the
 participant's `artifacts_dir` folder (set in `app.yaml`). `p.say`, `p.reply`
-and `p.withdraw` take `to=` (a sink, such as `Voice` or `TextSink`, or a list
-of them); without it they use the app's speech output.
+and `p.withdraw` take `to=` (a sink, such as `TextSink` or the kit's
+`Dialogue`, or a list of them); without it they use the app's speech output.
 
 An app depends on this package through its own `pyproject.toml` (a path
 source, as in `../../app-samples/*/pyproject.toml`), and then has the `xr-ai-dev`

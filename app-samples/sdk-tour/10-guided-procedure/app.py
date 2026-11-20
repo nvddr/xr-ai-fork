@@ -26,8 +26,8 @@ the conversation reads it, so "what step am I on?" just works.
 
 from pathlib import Path
 
-from xr_ai_app import App, Hub, PerConnection, Voice
-from xr_ai_kit import Conversation, OneShotDestination, Router
+from xr_ai_app import App, Hub, PerConnection
+from xr_ai_kit import Conversation, Dialogue, OneShotDestination, Router
 from xr_ai_kit.sop import (
     EscalationSettings,
     EscalationWords,
@@ -51,7 +51,7 @@ app.add(Hub())
 perceive = app.role("perceive")
 decide = app.role("decide")
 answer_with_reasoning = app.role("answer_with_reasoning")
-voice = app.add(Voice(summarize=app.role("answer_lightweight")))
+dialogue = app.add(Dialogue(summarize=app.role("answer_lightweight")))
 
 WARM_UP_S = 90
 
@@ -113,10 +113,10 @@ procedure = app.add(
         preflight,
         title="Printer pre-flight",
         decide=decide,
-        output=voice,
+        output=dialogue,
         # the steps ahead, for the conversation
         plan=[(step.id, step.words.does) for step in STEPS],
-        conversation=voice.dialogue,  # what each step and its escalator see
+        conversation=dialogue.log,  # what each step and its escalator see
     )
 )
 # Spoken answers; the checklist's state (in the context) is the only source
@@ -131,9 +131,9 @@ INSTRUCTIONS = (
 conversation = app.add(
     Conversation(
         role=answer_with_reasoning,
-        output=voice,
+        output=dialogue,
         instructions=INSTRUCTIONS,
-        context=[voice.dialogue, procedure.context],
+        context=[dialogue.log, procedure.context],
     )
 )
 chat = OneShotDestination(
@@ -151,8 +151,8 @@ routing = app.add(
         decide=decide,
         destinations=[chat, procedure.control],
         default=chat,
-        history=voice.dialogue,
-        output=voice,
+        history=dialogue.log,
+        output=dialogue,
     )
 )
 app.on_turn(routing.handle)  # every turn goes to the router first

@@ -5,7 +5,7 @@
 
 ``await conversation.text()`` is what has been said so far, one line each (``user: ...``, ``assistant: ...``), oldest
 first; ``async for _ in conversation.changes():`` runs now, then after each new line. Live it is the app's dialogue
-(``SopRunner(conversation=voice.dialogue)``); in an evaluation, a case's fixed text (:class:`FixedConversationHistory`).
+(``SopRunner(conversation=dialogue.log)``); in an evaluation, a case's fixed text (:class:`FixedConversationHistory`).
 """
 
 from __future__ import annotations

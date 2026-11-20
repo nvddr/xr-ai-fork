@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Coroutine
 
     from .app import App
-    from .participant import Participant
+    from .participant import Participant, Turn
 
 T = TypeVar("T")
 
@@ -24,8 +24,8 @@ class Component:
     """Base class of app components: lifecycle hooks, ``self.app`` and ``self.spawn``.
 
     Hooks are optional and default to no-ops. They run in a fixed order:
-    ``on_start`` and ``on_participant_enrolled`` in registration order, ``on_participant_unenrolled`` and
-    ``on_stop`` in reverse registration order (see ``LIFECYCLE_CONTRACT.md``). Component code never creates tasks
+    ``on_start``, ``on_participant_enrolled`` and ``before_turn`` in registration order, ``on_participant_unenrolled``
+    and ``on_stop`` in reverse registration order (see ``LIFECYCLE_CONTRACT.md``). Component code never creates tasks
     (use ``p.spawn``, or ``self.spawn`` for work that belongs to no participant), never catches ``CancelledError``
     and never orders shutdown. A component is routable through an ``xr_ai_kit.RouterDestination`` attribute it builds
     from its own methods. A component is not a runtime agent: a class with a foundation ``@subscribe`` handler raises
@@ -44,8 +44,8 @@ class Component:
                     raise TypeError(
                         f"{cls.__name__}.{name} is a foundation @subscribe handler, but a Component is not a runtime "
                         "agent and is never subscribed to topics. Use the component hooks (on_start, "
-                        "on_participant_enrolled, on_participant_unenrolled, on_stop), app.on_turn for user turns, "
-                        "and p.connected for a participant's connection."
+                        "on_participant_enrolled, before_turn, on_participant_unenrolled, on_stop), app.on_turn for "
+                        "user turns, and p.connected for a participant's connection."
                     )
 
     @property
@@ -61,6 +61,15 @@ class Component:
 
     async def on_participant_enrolled(self, p: Participant) -> None:
         """Called when a participant is enrolled, after its scope exists."""
+
+    async def before_turn(self, turn: Turn, p: Participant) -> None:
+        """Called with each user turn before the app's turn handler (``app.on_turn``) runs, in the turn's own task.
+
+        Every component sees the turn, in registration order, and the handler starts only after all of them
+        returned, so what a component records here (the user's words in a dialogue log) is already there when the
+        handler reads it. An exception ends the turn: the handler does not run. A turn is seen only when the app
+        has a turn handler.
+        """
 
     async def on_participant_unenrolled(self, p: Participant) -> None:
         """Called after the un-enrolled participant's tasks drained, before its resources are released.

@@ -24,8 +24,8 @@ runs. Any LangChain chat model works there too.
 from pathlib import Path
 
 from graph import build_graph
-from xr_ai_app import App, Hub, Participant, PerConnection, Voice, tool
-from xr_ai_kit import Conversation, Delegate
+from xr_ai_app import App, Hub, Participant, PerConnection, tool
+from xr_ai_kit import Conversation, Delegate, Dialogue
 from xr_ai_kit.langchain import GraphBackend, chat_model
 
 HERE = Path(__file__).resolve().parent
@@ -34,7 +34,7 @@ app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here
 reasoning = app.role("answer_with_reasoning")
 lightweight = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=lightweight))
+dialogue = app.add(Dialogue(summarize=lightweight))
 
 research = app.add(
     Delegate(
@@ -44,7 +44,7 @@ research = app.add(
             input=lambda request: {"request": request, "notes": []},
             result=lambda state: state["answer"],
         ),
-        output=voice,
+        output=dialogue,
         summarize=lightweight,
         progress_every_s=15.0,
     )
@@ -67,11 +67,11 @@ async def cancel_research(p: Participant) -> str:
 conversation = app.add(
     Conversation(
         role=reasoning,
-        output=voice,
+        output=dialogue,
         instructions="You are a voice assistant. Start research for anything "
         "that needs searching or planning, and say you will report back.",
         tools=[start_research, cancel_research],
-        context=[voice.dialogue, research.status, research.results],
+        context=[dialogue.log, research.status, research.results],
     )
 )
 app.on_turn(conversation.answer)

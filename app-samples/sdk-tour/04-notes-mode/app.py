@@ -31,11 +31,11 @@ from xr_ai_app import (
     Participant,
     PerConnection,
     Turn,
-    Voice,
 )
 from xr_ai_kit import (
     Ack,
     Conversation,
+    Dialogue,
     OneShotDestination,
     Router,
     StartStopDestination,
@@ -48,7 +48,7 @@ app.add(Hub())  # the device connection: who is here
 reasoning = app.role("answer_with_reasoning")
 lightweight = app.role("answer_lightweight")
 decide = app.role("decide")
-voice = app.add(Voice(summarize=lightweight))
+dialogue = app.add(Dialogue(summarize=lightweight))
 
 # The notes, as text the conversation can read (so "read my notes back" is
 # a question for it). Participant scope: they outlive a reconnect when
@@ -61,7 +61,7 @@ notes = ContextLog(
 async def take_note(turn: Turn, p: Participant) -> None:
     """One note: the turn's words. Nothing here about the mode."""
     await notes.publish(p, turn.text)
-    await p.reply("Noted.", to=voice)
+    await p.reply("Noted.", to=dialogue)
 
 
 note_mode = StartStopDestination(
@@ -69,7 +69,7 @@ note_mode = StartStopDestination(
     "Note taking: start or stop a note session, or dictate a note.",
     take_note,
     decide=decide,
-    output=voice,
+    output=dialogue,
     start="The user wants to start taking notes.",
     content="A statement to write down; not a request.",
     stop="The user wants to stop taking notes.",
@@ -82,9 +82,9 @@ note_mode = StartStopDestination(
 conversation = app.add(
     Conversation(
         role=reasoning,
-        output=voice,
+        output=dialogue,
         instructions="You are a helpful assistant. Be brief.",
-        context=[voice.dialogue, notes],
+        context=[dialogue.log, notes],
     )
 )
 chat = OneShotDestination(
@@ -98,8 +98,8 @@ routing = app.add(
         decide=decide,
         destinations=[chat, note_mode],
         default=chat,
-        history=voice.dialogue,
-        output=voice,
+        history=dialogue.log,
+        output=dialogue,
         ack=Ack(role=lightweight, delay_s=1.5),
     )
 )

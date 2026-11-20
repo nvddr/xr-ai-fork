@@ -20,7 +20,7 @@ And the other way round:
 
   turn -> Router -> MathAgent.solve
        -> agent.astream({"messages": [...context, user turn]})
-       -> stream_text(...) -> p.reply(..., to=voice)
+       -> stream_text(...) -> p.reply(..., to=dialogue)
 """
 
 from pathlib import Path
@@ -35,11 +35,11 @@ from xr_ai_app import (
     Participant,
     PerConnection,
     Turn,
-    Voice,
     tool,
 )
 from xr_ai_kit import (
     Conversation,
+    Dialogue,
     OneShotDestination,
     Router,
 )
@@ -57,7 +57,7 @@ app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 hub = app.add(Hub())
 reasoning = app.role("answer_with_reasoning")
 perceive = app.role("perceive")
-voice = app.add(Voice(summarize=app.role("answer_lightweight")))
+dialogue = app.add(Dialogue(summarize=app.role("answer_lightweight")))
 
 
 @lc_tool
@@ -102,23 +102,23 @@ class MathAgent(Component):
             prompt="You solve math and unit questions. Answer in one short "
             "spoken sentence.",
         )
-        history = await messages(p, voice.dialogue)
+        history = await messages(p, dialogue.log)
         stream = agent.astream(
             {"messages": [*history, HumanMessage(turn.text)]},
             stream_mode="messages",
         )
-        await p.reply(stream_text(stream), to=voice)
+        await p.reply(stream_text(stream), to=dialogue)
 
 
 math = app.add(MathAgent())
 conversation = app.add(
     Conversation(
         role=reasoning,
-        output=voice,
+        output=dialogue,
         instructions="You are a helpful assistant. Be brief.",
         # A LangChain tool in OUR conversation: the reverse adapter.
         tools=[from_langchain(convert)],
-        context=[voice.dialogue],
+        context=[dialogue.log],
     )
 )
 chat = OneShotDestination(
@@ -129,8 +129,8 @@ routing = app.add(
         decide=app.role("decide"),
         destinations=[chat, math.solve],
         default=chat,
-        history=voice.dialogue,
-        output=voice,
+        history=dialogue.log,
+        output=dialogue,
     )
 )
 app.on_turn(routing.handle)  # every turn goes to the router first

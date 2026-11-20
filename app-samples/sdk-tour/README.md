@@ -150,7 +150,7 @@ the `tests/` project, not the samples' own).
 
 | # | Sample | Shape | What it shows |
 |---|---|---|---|
-| 01 | hello-voice | one handler | `Voice`, `Conversation`, `app.on_turn`, the dialogue log |
+| 01 | hello-voice | one handler | `Dialogue`, `Conversation`, `app.on_turn`, the dialogue log |
 | 02 | vision-qa | a conversation with a tool | `@tool`, `p.frames`, `perceive.ask`; **test_app.py**: fake models, the trace in tests |
 | 03 | camera-monitor | proactive | a loop per participant, a structured read per frame, a yes streak per condition, `p.say(urgent=)`, `ContextValue`, tools that change state |
 | 04 | notes-mode | router + sticky mode | `Router`, `OneShotDestination` (the conversation), `StartStopDestination` (a mode started and stopped by asking, holding focus; a question is declined and routed elsewhere), `ContextLog` |

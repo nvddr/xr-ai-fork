@@ -160,11 +160,12 @@ Only `App.run()` installs signal handlers.
 
 Components are composed on purpose: hooks run in a defined order, output always names a registered sink, and the app checks the
 composition before it starts (`COMPOSITION_CONTRACT.md`, epic C). The suite check of this rule is a pending placeholder until
-the `Sink`, `Hub`, `Voice`, `Conversation` and `Router` components exist.
+the `Sink`, `Hub`, `Dialogue`, `Conversation` and `Router` components exist.
 
 - R8.1 An agent that exposes `request_stop()` (the voice agent) is asked to stop before the un-enroll sequence of any participant, so
   input ends first. This is the documented generalization of R7.3, not a special case for one class.
-- R8.2 Hooks follow registration order on start and reverse order on un-enroll and stop. Register sinks first, then
+- R8.2 Hooks follow registration order on start and on each turn (`before_turn`, awaited in the turn's task before the
+  `app.on_turn` handler runs; an exception ends the turn), and reverse order on un-enroll and stop. Register sinks first, then
   non-routable components, then conversations, then the router. Stop therefore runs the router first (it drains), then conversations (they
   close their contexts), then sinks last. Pending: `start()` does not check this order yet (the hooks run in the order of the
   `app.add` calls, whatever it is); once implemented, it raises an error if a `Conversation` or `Router` is registered before the

@@ -35,7 +35,7 @@ from typing import Annotated
 from instrument_monitor import InstrumentMonitor
 from instruments import InstrumentReader, load_device_map
 from pydantic import BaseModel, Field
-from records import AnswerVoice, ForegroundRecord, Records, lab_tool
+from records import AnswerDialogue, ForegroundRecord, Records, lab_tool
 from visual_monitor import VisualMonitor
 from xr_ai_app import App, ContextLog, Hub, Participant, PerConnection, Turn
 from xr_ai_kit import Conversation
@@ -70,7 +70,7 @@ FRAMES = {
 app.add(Hub())  # the device connection: who is here, and their camera
 llm = app.role("llm")
 vlm = app.role("vlm")
-voice = app.add(AnswerVoice())
+dialogue = app.add(AnswerDialogue())
 records = app.add(Records())
 # What the monitors noticed, newest last; the conversation reads it.
 history = ContextLog(
@@ -89,7 +89,7 @@ reader = InstrumentReader(
 instruments = app.add(
     InstrumentMonitor(
         reader,
-        output=voice,
+        output=dialogue,
         records=records,
         history=history,
         every_s=SETTINGS.instrument_monitor_interval_s,
@@ -248,7 +248,7 @@ async def recent_visual_history(
 conversation = app.add(
     Conversation(
         role=llm,
-        output=voice,
+        output=dialogue,
         instructions=prompt("foreground_prompt"),
         context=[history],
         tools=[

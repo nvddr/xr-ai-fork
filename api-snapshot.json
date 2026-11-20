@@ -87,7 +87,6 @@
         "StructuredOutputError",
         "TextSink",
         "Turn",
-        "Voice",
         "current_turn",
         "output_started",
         "tool"
@@ -202,6 +201,7 @@
         "Conversation",
         "Delegate",
         "DestinationResult",
+        "Dialogue",
         "Job",
         "OneShotDestination",
         "Router",

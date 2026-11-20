@@ -28,8 +28,8 @@ from pathlib import Path
 
 from procedure import TeaProcedure, TeaSettings
 from pydantic import BaseModel, Field
-from xr_ai_app import App, Hub, Participant, PerConnection, Turn, Voice
-from xr_ai_kit import Ack, Conversation, OneShotDestination, Router
+from xr_ai_app import App, Hub, Participant, PerConnection, Turn
+from xr_ai_kit import Ack, Conversation, Dialogue, OneShotDestination, Router
 from xr_ai_kit.sop import SopRunner
 
 HERE = Path(__file__).resolve().parent
@@ -60,10 +60,10 @@ tea_procedure = TeaProcedure(
     answer_with_reasoning=answer_with_reasoning,
     settings=SETTINGS.tea,
 )
-voice = app.add(
-    Voice(
+dialogue = app.add(
+    Dialogue(
         summarize=answer_with_reasoning,
-        dialogue_budget_bytes=SETTINGS.dialogue_budget_bytes,
+        budget_bytes=SETTINGS.dialogue_budget_bytes,
     )
 )
 
@@ -73,12 +73,12 @@ tea = app.add(
         tea_procedure.make_tea,
         title="Tea guidance",
         decide=decide,
-        output=voice,
+        output=dialogue,
         plan=tea_procedure.plan,
         # The dialogue (what was said), which each step and its escalator
         # see as environment.conversation; not the Conversation component
         # below, which answers the person.
-        conversation=voice.dialogue,
+        conversation=dialogue.log,
         description=(
             "Only explicit controls of the tea-making guide: start, stop, "
             "skip the current step, restart. Not questions about tea, the "
@@ -90,9 +90,9 @@ tea = app.add(
 conversation = app.add(
     Conversation(
         role=answer_with_reasoning,
-        output=voice,
+        output=dialogue,
         instructions=prompt("conversation"),
-        context=[tea.context, voice.dialogue],
+        context=[tea.context, dialogue.log],
     )
 )
 chat = OneShotDestination(
@@ -129,9 +129,9 @@ routing = app.add(
         decide=decide,
         destinations=[tea.control, view, chat],
         default=chat,
-        history=voice.dialogue,
+        history=dialogue.log,
         history_budget_bytes=SETTINGS.routing_history_budget_bytes,
-        output=voice,
+        output=dialogue,
         # The conversation reasons before it answers; a quick line covers
         # the wait when nothing was said for a moment.
         ack=Ack(role=app.role("answer_lightweight"), delay_s=1.5),

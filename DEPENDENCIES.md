@@ -1345,6 +1345,7 @@ refer to [Software bill of materials](docs/source/guides/sbom.md).
   - `xr-ai-launcher` → [`xr-ai-launcher`](utils/xr-ai-launcher/) (local, editable)
   - `xr-ai-logging` → [`xr-ai-logging`](utils/xr-ai-logging/) (local, editable)
   - `xr-ai-app` → [`xr-ai-app`](app-sdk/xr-ai-app/) (local, editable)
+  - `xr-ai-kit` → [`xr-ai-kit`](app-sdk/xr-ai-kit/) (local, editable)
 - Optional dependency groups: none
 - Commands:
   - `simple_vlm` → `main:run`

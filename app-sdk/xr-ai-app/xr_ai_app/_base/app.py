@@ -441,7 +441,7 @@ class App:
         return component
 
     def on_turn(self, fn: F, /) -> F:
-        """Make ``fn(turn, p)`` the one turn handler: traced, and seen first by turn observers (``Voice``)."""
+        """Make ``fn(turn, p)`` the one turn handler: traced, and run after every component's ``before_turn``."""
         if self._turn_handler is not None:
             raise ValueError("an on_turn handler is already registered")
         self._turn_handler = fn
@@ -865,9 +865,9 @@ class App:
     async def _run_turn(
         self, handler: Callable[[Turn, Participant], Awaitable[Any]], turn: Turn, p: Participant
     ) -> None:
-        """One turn, in the participant's ``turn`` task: traced, and seen first by every ``_observe_turn`` component.
+        """One turn, in the participant's ``turn`` task: traced, and seen first by every component's ``before_turn``.
 
-        ``Voice`` observes turns to record the user's words in its dialogue before the handler answers. The device
+        A component records the user's words there (a dialogue log) before the handler answers. The device
         shows the agent as ``processing`` while the turn runs and ``idle`` after (a superseding turn starts only once
         the one it replaces has ended, so the two never overlap).
         """
@@ -879,9 +879,7 @@ class App:
             await self._set_agent_status(p, "processing")
             try:
                 for component in list(self._components):
-                    observe = getattr(component, "_observe_turn", None)
-                    if observe is not None:
-                        await observe(turn, p)
+                    await component.before_turn(turn, p)
                 await handler(turn, p)
             except BaseException as exc:
                 outcome = type(exc).__name__

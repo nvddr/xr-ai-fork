@@ -16,8 +16,8 @@ what was traced.
 from pathlib import Path
 
 from pydantic import BaseModel
-from xr_ai_app import App, Hub, Participant, PerConnection, Voice, tool
-from xr_ai_kit import Conversation
+from xr_ai_app import App, Hub, Participant, PerConnection, tool
+from xr_ai_kit import Conversation, Dialogue
 
 HERE = Path(__file__).resolve().parent
 
@@ -33,7 +33,7 @@ SETTINGS = app.settings(Settings)
 hub = app.add(Hub())  # the device connection: who is here, and their camera
 answer = app.role("answer_with_reasoning")
 perceive = app.role("perceive")
-voice = app.add(Voice(summarize=app.role("answer_lightweight")))
+dialogue = app.add(Dialogue(summarize=app.role("answer_lightweight")))
 
 
 @tool
@@ -55,11 +55,11 @@ async def look(p: Participant, question: str) -> str:
 conversation = app.add(
     Conversation(
         role=answer,
-        output=voice,
+        output=dialogue,
         instructions="You help the user with what they see. Use `look` "
         "whenever the answer depends on the camera. Keep answers short.",
         tools=[look],
-        context=[voice.dialogue],
+        context=[dialogue.log],
     )
 )
 app.on_turn(conversation.answer)

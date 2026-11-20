@@ -6,17 +6,18 @@
 SHAPE: one component answers every turn. There is no router: `app.on_turn`
 names the one handler, and the conversation's `answer` is that handler.
 
-  user speaks -> Voice (speech to text) -> app.on_turn -> conversation.answer
-              -> p.reply(..., to=voice) -> Voice (text to speech)
+  user speaks -> speech to text -> app.on_turn -> conversation.answer
+              -> p.reply(..., to=dialogue) -> text to speech
 
-The voice component keeps the dialogue (`voice.dialogue`, a context log), and
-the conversation reads it, so the assistant remembers earlier turns.
+The dialogue component speaks and keeps what was said (`dialogue.log`, a
+context log), and the conversation reads it, so the assistant remembers
+earlier turns.
 """
 
 from pathlib import Path
 
-from xr_ai_app import App, Hub, PerConnection, Voice
-from xr_ai_kit import Conversation
+from xr_ai_app import App, Hub, PerConnection
+from xr_ai_kit import Conversation, Dialogue
 
 HERE = Path(__file__).resolve().parent
 
@@ -26,17 +27,17 @@ app.add(Hub())  # the device connection: who is here
 # Model roles: models.json says which model fills each one.
 answer = app.role("answer_lightweight")
 
-# Speech in and out. Which speech models, and when to listen, is app.yaml's
-# `voice:` section. `summarize` compacts the dialogue log when it is full.
-voice = app.add(Voice(summarize=answer, dialogue_budget_bytes=6_000))
+# Speech out, and the dialogue log. Which speech models, and when to listen,
+# is app.yaml's `voice:` section. `summarize` compacts the log when it is full.
+dialogue = app.add(Dialogue(summarize=answer, budget_bytes=6_000))
 
 conversation = app.add(
     Conversation(
         role=answer,
-        output=voice,
+        output=dialogue,
         instructions="You are a friendly assistant. Answer in one or two "
         "short spoken sentences.",
-        context=[voice.dialogue],
+        context=[dialogue.log],
     )
 )
 

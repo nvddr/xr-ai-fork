@@ -33,8 +33,8 @@ for a scenario run, start research_agent/ first.
 from pathlib import Path
 
 from pydantic import BaseModel
-from xr_ai_app import App, Hub, Participant, PerConnection, Voice, tool
-from xr_ai_kit import Conversation, Delegate
+from xr_ai_app import App, Hub, Participant, PerConnection, tool
+from xr_ai_kit import Conversation, Delegate, Dialogue
 from xr_ai_kit.delegate import A2ABackend
 
 HERE = Path(__file__).resolve().parent
@@ -49,13 +49,13 @@ app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here
 SETTINGS = app.settings(Settings)
 lightweight = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=lightweight))
+dialogue = app.add(Dialogue(summarize=lightweight))
 
 research = app.add(
     Delegate(
         "research",
         backend=A2ABackend(SETTINGS.agent_url),
-        output=voice,  # where progress and results are spoken
+        output=dialogue,  # where progress and results are spoken
         progress_every_s=SETTINGS.progress_every_s,
         summarize=lightweight,  # speaks a result the back end did not word
         max_running=1,  # per participant; a new job replaces the old one
@@ -81,14 +81,14 @@ async def cancel_research(p: Participant) -> str:
 conversation = app.add(
     Conversation(
         role=app.role("answer_with_reasoning"),
-        output=voice,
+        output=dialogue,
         instructions="You are a voice assistant. For anything that needs "
         "searching, comparing or planning, start research and say you will "
         "report back. Use the research sections to answer about it.",
         tools=[start_research, cancel_research],
         # research.status: what is running and its latest progress.
         # research.results: finished results, newest last.
-        context=[voice.dialogue, research.status, research.results],
+        context=[dialogue.log, research.status, research.results],
     )
 )
 app.on_turn(conversation.answer)

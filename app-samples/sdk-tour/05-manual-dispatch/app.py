@@ -28,9 +28,8 @@ from xr_ai_app import (
     Participant,
     PerConnection,
     Turn,
-    Voice,
 )
-from xr_ai_kit import Conversation, OneShotDestination
+from xr_ai_kit import Conversation, Dialogue, OneShotDestination
 
 HERE = Path(__file__).resolve().parent
 
@@ -38,7 +37,7 @@ app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here
 decide = app.role("decide")
 answer = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=answer))
+dialogue = app.add(Dialogue(summarize=answer))
 
 
 class Lights(Component):
@@ -53,13 +52,13 @@ class Lights(Component):
         )
 
     async def _on(self, turn: Turn, p: Participant) -> None:
-        await p.reply("Lights on.", to=voice)
+        await p.reply("Lights on.", to=dialogue)
 
     async def _off(self, turn: Turn, p: Participant) -> None:
-        await p.reply("Lights off.", to=voice)
+        await p.reply("Lights off.", to=dialogue)
 
     async def _dim(self, turn: Turn, p: Participant) -> None:
-        await p.reply("Dimmed.", to=voice)
+        await p.reply("Dimmed.", to=dialogue)
 
 
 class Music(Component):
@@ -73,10 +72,10 @@ class Music(Component):
         )
 
     async def _play(self, turn: Turn, p: Participant) -> None:
-        await p.reply("Playing.", to=voice)
+        await p.reply("Playing.", to=dialogue)
 
     async def _stop(self, turn: Turn, p: Participant) -> None:
-        await p.reply("Stopped.", to=voice)
+        await p.reply("Stopped.", to=dialogue)
 
 
 lights = app.add(Lights())
@@ -84,9 +83,9 @@ music = app.add(Music())
 conversation = app.add(
     Conversation(
         role=answer,
-        output=voice,
+        output=dialogue,
         instructions="You are a home assistant. Be brief.",
-        context=[voice.dialogue],
+        context=[dialogue.log],
     )
 )
 
@@ -119,10 +118,10 @@ async def handle(turn: Turn, p: Participant) -> None:
 
     # 2. Pick the area (a decision over three options), with the dialogue.
     latest = f"Latest message: {turn.text}"
-    dialogue = await voice.dialogue.view(p, budget_bytes=4_000)
+    said = await dialogue.log.view(p, budget_bytes=4_000)
     area = await pick(
         {name: description for name, (description, _) in AREAS.items()},
-        f"Recent dialogue:\n{dialogue}\n\n{latest}" if dialogue else latest,
+        f"Recent dialogue:\n{said}\n\n{latest}" if said else latest,
     )
     # 3. Pick the action inside it. A destination describes itself.
     actions = {d.name: d for d in AREAS[area][1]}

@@ -12,8 +12,8 @@ taking an :class:`Event`: :class:`MemorySink` (tests), :class:`JsonlSink`, :clas
 
 Writing, for library and app code: :func:`emit` one event, :func:`span` a timed block (events inside it name it
 as their parent), :func:`brief` a value for an event, :func:`in_tool` tag the model calls made inside a tool, and
-:func:`quiet_role_calls` when code traces a model call itself (the role calls under it are then not traced twice).
-All of them do nothing when no sink is listening.
+:func:`quiet_role_calls` when code traces a model call itself (the role calls under it are then not traced twice),
+and :func:`note_output` when an output (a sink) speaks. All of them do nothing when no sink is listening.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from typing import Any
 from ._base import _tracing
 from ._base._relay import RelaySink
 from ._base._tracing import Event, Ids, JsonlSink, LogSink, MemorySink, Sink, Tracer, current_ids
+from .output import note_output
 
 __all__ = [
     "Event",
@@ -39,6 +40,7 @@ __all__ = [
     "current_ids",
     "emit",
     "in_tool",
+    "note_output",
     "quiet_role_calls",
     "span",
 ]

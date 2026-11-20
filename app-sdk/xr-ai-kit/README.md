@@ -14,8 +14,9 @@ and test kit); anything composed from those lives here, however common.
 
 | Module | What |
 |---|---|
-| `xr_ai_kit` | `Conversation`, `Router`, `OneShotDestination`, `StartStopDestination`, `RouterDestination`, `DestinationResult`, `Admission`, `Ack`, `Delegate`, `Job` |
+| `xr_ai_kit` | `Conversation`, `Dialogue`, `Router`, `OneShotDestination`, `StartStopDestination`, `RouterDestination`, `DestinationResult`, `Admission`, `Ack`, `Delegate`, `Job` |
 | `xr_ai_kit.conversation` | `Conversation`: multi-turn answers from one role over the context channels it lists, spoken on an output, with a streaming tool loop over `@tool` functions (`xr_ai_app.tools` calls each tool); a `return_direct` tool's result (text, or a stream of text) is spoken as the answer and ends the loop; the loop speaks the answer, the tool returns it |
+| `xr_ai_kit.dialogue` | `Dialogue`: speech out (a sink: `say`, `reply`, `withdraw` through the participant's default output) that keeps `dialogue.log`, a participant-scoped context log of what the user said (recorded in `before_turn`, so the turn handler finds it) and what was spoken through it |
 | `xr_ai_kit.routing` | the routing names, and `choose` (one pick for a turn: `role.decide` plus focus, retries and the dialogue); the devkit's `destination:<name>` exercise target (`resolve_destination`, `destinations`) |
 | `xr_ai_kit.delegate` | `Delegate`, `Job`, `JobUpdate` and the job back ends: `FunctionBackend`, `A2ABackend` (remote agents over A2A; extra `xr-ai-kit[a2a]`) |
 | `xr_ai_kit.sop` | standard operating procedures: steps (`steps`: what every step shares; `step_types`: `WatchStep`, `ReadStep`, `TransformStep`, `WaitStep`), an optional escalator beside a step (`escalation`), and `SopRunner`, which runs a procedure written as plain Python, one run per participant, with controls and a summary for the conversation (see below) |
@@ -63,7 +64,7 @@ async def make_tea(run: Run) -> None:
 steps = (fill_water, steep)
 tea = app.add(SopRunner("tea", make_tea, title="Tea guidance", decide=classifier,
                         plan=[(step.id, step.words.does) for step in steps],
-                        conversation=voice.dialogue))   # what each step and its escalator see
+                        conversation=dialogue.log))     # what each step and its escalator see
 # tea.control is a router destination (start, stop, skip, restart; anything else passes on);
 # tea.context is the run's summary, for a Conversation's context=.
 ```
@@ -113,7 +114,7 @@ tea = app.add(SopRunner("tea", make_tea, title="Tea guidance", decide=classifier
   when the app has an artifacts folder (each line said or asked, with who said
   it: the step or its escalator), and summarized in `runner.context`.
   The runner gives each step the app's conversation
-  (`SopRunner(conversation=voice.dialogue)`) and the run's summary.
+  (`SopRunner(conversation=dialogue.log)`) and the run's summary.
 - `xr_ai_kit.sop.evaluation` runs one step at a time on a recorded scene and
   a scripted person, scored by the step type's own scoring module (and the
   escalator's, for an escalated step); it runs the step that ships. A
@@ -148,10 +149,10 @@ are helpers, and anything else is a `RouterDestination` with its hooks.
   ```python
   async def take_note(turn, p):
       await notes.publish(p, turn.text)
-      await p.reply("Noted.", to=voice)
+      await p.reply("Noted.", to=dialogue)
 
   note_mode = StartStopDestination(
-      "notes", "Note taking.", take_note, decide=decide, output=voice,
+      "notes", "Note taking.", take_note, decide=decide, output=dialogue,
       start="Start taking notes.", stop="Stop taking notes.",
       content="A statement to write down.", started="Okay, I'm taking notes.",
       stopped="Okay, notes stopped.")

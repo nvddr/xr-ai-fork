@@ -9,6 +9,7 @@ scenario with the replies in its `<name>.fakes.yaml`.
 Run from this directory: uv --config-file ../../uv.toml run pytest
 """
 
+import asyncio
 import dataclasses
 import importlib
 import json
@@ -23,6 +24,8 @@ from steps.heat_water.schemas import (
     reached_target,
 )
 from tea import WaterTemperature
+from xr_ai_app import ContextLog, Participant, Turn
+from xr_ai_app.context import changes
 from xr_ai_app.devkit import (
     Scenario,
     fakes_from_file,
@@ -46,6 +49,29 @@ def play(name: str, tmp_path: Path):
     scenario = Scenario.load(SCENARIOS / f"{name}.yaml")
     report = run_virtual(run_scenario(loaded.app, scenario, models=fakes))
     return report, fakes
+
+
+def test_the_guide_follows_what_the_dialogue_records() -> None:
+    """The runner's conversation is the dialogue's own log, so a step's
+    escalator, which follows it with `changes()`, wakes on a spoken turn."""
+    loaded = importlib.reload(module)
+    log = loaded.tea._conversation  # noqa: SLF001
+    assert log is loaded.dialogue.log and isinstance(log, ContextLog)
+
+    async def wakes() -> bool:
+        p = Participant("p")
+        follow = changes(p, [log])
+        await anext(follow)  # now
+        woken = asyncio.ensure_future(anext(follow))
+        await asyncio.sleep(0)
+        assert not woken.done()
+        turn = Turn(text="it's in Fahrenheit", timestamp_us=0, id="t")
+        await loaded.dialogue.before_turn(turn, p)
+        await asyncio.wait_for(woken, 1)
+        await follow.aclose()
+        return log.entries(p) == ["user: it's in Fahrenheit"]
+
+    assert asyncio.run(wakes())
 
 
 def test_the_guide_runs_start_to_finish(tmp_path: Path) -> None:

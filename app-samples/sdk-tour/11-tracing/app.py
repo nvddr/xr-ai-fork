@@ -22,9 +22,9 @@ This sample adds two things by hand:
 import logging
 from pathlib import Path
 
-from xr_ai_app import App, Hub, Participant, PerConnection, Turn, Voice
+from xr_ai_app import App, Hub, Participant, PerConnection, Turn
 from xr_ai_app.trace import Event
-from xr_ai_kit import Conversation
+from xr_ai_kit import Conversation, Dialogue
 
 HERE = Path(__file__).resolve().parent
 log = logging.getLogger("tracing-sample")
@@ -33,13 +33,13 @@ log = logging.getLogger("tracing-sample")
 app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here
 answer = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=answer))
+dialogue = app.add(Dialogue(summarize=answer))
 conversation = app.add(
     Conversation(
         role=answer,
-        output=voice,
+        output=dialogue,
         instructions="Be brief.",
-        context=[voice.dialogue],
+        context=[dialogue.log],
     )
 )
 

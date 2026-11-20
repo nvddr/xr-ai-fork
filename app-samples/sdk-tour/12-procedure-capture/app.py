@@ -31,7 +31,8 @@ import re
 from pathlib import Path
 
 from pydantic import BaseModel
-from xr_ai_app import App, Hub, Participant, PerConnection, Turn, Voice
+from xr_ai_app import App, Hub, Participant, PerConnection, Turn
+from xr_ai_kit import Dialogue
 from xr_ai_kit.sop.capture import ProcedureCapture
 
 HERE = Path(__file__).resolve().parent
@@ -46,11 +47,11 @@ app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 SETTINGS = app.settings(Settings)
 
 hub = app.add(Hub())  # the device connection: who is here, and their camera
-voice = app.add(Voice())
+dialogue = app.add(Dialogue())
 capture = app.add(
     ProcedureCapture(
         caption=app.role("perceive"),
-        output=voice,  # speaks the welcome, "Capture started.", "stopped."
+        output=dialogue,  # speaks the welcome, "Capture started.", "stopped."
         frames_per_s=SETTINGS.frames_per_s,
         caption_every_s=SETTINGS.caption_every_s,
     )

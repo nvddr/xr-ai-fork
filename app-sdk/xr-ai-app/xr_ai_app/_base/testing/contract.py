@@ -49,7 +49,7 @@ LIFECYCLE_RULES: Final[tuple[str, ...]] = (
 """One identifier per rule in the package's ``docs/LIFECYCLE_CONTRACT.md``; the suite has one check per entry."""
 
 PENDING_RULES: Final[frozenset[str]] = frozenset({"R8_composition"})
-"""Rules whose check is a placeholder (epic C: the ``Sink``, ``Hub``, ``Voice``, ``Conversation`` and ``Router``
+"""Rules whose check is a placeholder (epic C: the ``Sink``, ``Hub``, ``Dialogue``, ``Conversation`` and ``Router``
 components). ``run_lifecycle_rule`` raises ``NotImplementedError`` for them (tests mark that an expected
 failure); ``run_lifecycle_contract`` skips them silently (debug log). Supplying the last piece empties
 this set."""

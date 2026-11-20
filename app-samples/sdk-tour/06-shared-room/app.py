@@ -26,10 +26,9 @@ from xr_ai_app import (
     Hub,
     Participant,
     Persistent,
-    Voice,
     tool,
 )
-from xr_ai_kit import Conversation
+from xr_ai_kit import Conversation, Dialogue
 
 HERE = Path(__file__).resolve().parent
 
@@ -42,7 +41,7 @@ app = App.from_config(
 )
 app.add(Hub())  # the device connection: who is here
 lightweight = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=lightweight))
+dialogue = app.add(Dialogue(summarize=lightweight))
 
 app.state.checklist = dict.fromkeys(ITEMS, "")  # item -> who checked it
 
@@ -71,19 +70,19 @@ async def check_item(p: Participant, item: str) -> str:
     await publish_checklist()
     for other in app.participants:
         if other is not p:
-            await other.say(f"{p.name} checked {item}.", to=voice)
+            await other.say(f"{p.name} checked {item}.", to=dialogue)
     return "Checked."
 
 
 conversation = app.add(
     Conversation(
         role=app.role("answer_with_reasoning"),
-        output=voice,
+        output=dialogue,
         instructions="You coordinate a team working through a safety "
         "checklist. Check items when someone reports them done. Be brief.",
         tools=[check_item],
         # The person's own dialogue, then what the whole room shares.
-        context=[voice.dialogue, checklist, room],
+        context=[dialogue.log, checklist, room],
     )
 )
 app.on_turn(conversation.answer)

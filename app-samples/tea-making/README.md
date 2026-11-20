@@ -16,7 +16,7 @@ is no step language and no workflow engine.
 ## How it works
 
 ```text
-Voice -> Router (Clef)
+turn -> Router (Clef)
            |-- tea           controls only: start, stop, skip, restart
            |                 -> SopRunner -> procedure.py (one run per person)
            |                                   read, transform, watch x3, wait
@@ -53,7 +53,7 @@ which the check reads) or tells them what to bring into view. It never
 completes a step. Whether every escalator reads the run's summary and the
 conversation, whether it learns from the conversation, and how often it
 may speak are app.yaml's `settings.tea.escalation`; the conversation is
-`SopRunner(conversation=voice.dialogue)` in app.py.
+`SopRunner(conversation=dialogue.log)` in app.py.
 
 ```text
 procedure.py      make_tea (the order of the steps, what passes between them); TeaProcedure builds them

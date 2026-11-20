@@ -48,10 +48,10 @@ class SopRunner(Component):
     app's speech output). ``description`` is what a Router reads to send control requests here. ``controls`` and
     ``messages`` override the default wording (:data:`CONTROLS`, :data:`MESSAGES`) key by key.
     ``conversation`` is the conversation with the person, a :class:`~xr_ai_app.ContextLog` such as
-    ``voice.dialogue``, which each step and the escalator beside it see as ``environment.conversation`` (at most
-    ``conversation_budget_bytes`` of it). Without one they see an empty conversation that never changes, so an
-    escalator set to learn from the conversation learns nothing. ``summary_budget_bytes`` bounds the run's summary
-    (:attr:`context`).
+    ``dialogue.log`` (the kit's :class:`~xr_ai_kit.Dialogue`), which each step and the escalator beside it see as
+    ``environment.conversation`` (at most ``conversation_budget_bytes`` of it). Without one they see an empty
+    conversation that never changes, so an escalator set to learn from the conversation learns nothing.
+    ``summary_budget_bytes`` bounds the run's summary (:attr:`context`).
     """
 
     def __init__(

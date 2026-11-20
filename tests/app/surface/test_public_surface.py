@@ -37,7 +37,15 @@ SURFACE: dict[str, set[str]] = {
         "test_session",
         "trace",
     },
-    "Component": {"app", "on_participant_enrolled", "on_participant_unenrolled", "on_start", "on_stop", "spawn"},
+    "Component": {
+        "app",
+        "before_turn",
+        "on_participant_enrolled",
+        "on_participant_unenrolled",
+        "on_start",
+        "on_stop",
+        "spawn",
+    },
     "Participant": {
         "artifacts",
         "cancel",

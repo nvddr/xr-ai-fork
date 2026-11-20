@@ -36,11 +36,10 @@ from xr_ai_app import (
     Hub,
     Participant,
     PerConnection,
-    Voice,
     clock,
     tool,
 )
-from xr_ai_kit import Conversation
+from xr_ai_kit import Conversation, Dialogue
 
 HERE = Path(__file__).resolve().parent
 
@@ -64,7 +63,7 @@ SETTINGS = app.settings(Settings)
 hub = app.add(Hub())
 perceive = app.role("perceive")
 lightweight = app.role("answer_lightweight")
-voice = app.add(Voice(summarize=lightweight))
+dialogue = app.add(Dialogue(summarize=lightweight))
 
 # One schema for every look: a field per condition, plus a one-line summary.
 # Built from the settings, so a new condition needs no code.
@@ -115,7 +114,7 @@ class Monitor(Component):
                         # `withdraw` drop it if it is still queued.
                         await p.say(
                             SETTINGS.conditions[name].say,
-                            to=voice,
+                            to=dialogue,
                             urgent=True,
                             source=name,
                         )
@@ -155,11 +154,11 @@ monitor = app.add(Monitor())
 conversation = app.add(
     Conversation(
         role=app.role("answer_with_reasoning"),
-        output=voice,
+        output=dialogue,
         instructions="You are a camera assistant. The camera monitor section "
         "says what you last saw. Pause or resume the monitor when asked.",
         tools=[pause_monitor, resume_monitor],
-        context=[voice.dialogue, seen],
+        context=[dialogue.log, seen],
     )
 )
 app.on_turn(conversation.answer)

@@ -27,8 +27,8 @@ from current_view import CurrentView
 from note_taking import NoteTaking
 from pydantic import BaseModel
 from visual_alert import VisualAlert
-from xr_ai_app import App, ContextLog, Hub, PerConnection, Voice
-from xr_ai_kit import Ack, Conversation, OneShotDestination, Router
+from xr_ai_app import App, ContextLog, Hub, PerConnection
+from xr_ai_kit import Ack, Conversation, Dialogue, OneShotDestination, Router
 
 HERE = Path(__file__).resolve().parent
 PROMPTS = HERE / "prompts"
@@ -54,10 +54,10 @@ app.add(Hub())  # the device connection: who is here, and their camera
 llm = app.role("llm")
 router = app.role("router")
 vlm = app.role("vlm")
-voice = app.add(
-    Voice(
+dialogue = app.add(
+    Dialogue(
         summarize=llm,  # folds old dialogue into a summary
-        dialogue_budget_bytes=SETTINGS.dialogue_budget_bytes,
+        budget_bytes=SETTINGS.dialogue_budget_bytes,
     )
 )
 # Participant-authored notes, as the conversation reads them.
@@ -71,9 +71,9 @@ notes = ContextLog(
 conversation = app.add(
     Conversation(
         role=llm,
-        output=voice,
+        output=dialogue,
         instructions=prompt("conversation"),
-        context=[voice.dialogue, notes],
+        context=[dialogue.log, notes],
     )
 )
 chat = OneShotDestination(
@@ -89,7 +89,7 @@ chat = OneShotDestination(
 view = app.add(
     CurrentView(
         vlm,
-        voice,
+        dialogue,
         system=prompt("system"),
         max_age_s=SETTINGS.frame_max_age_s,
         timeout_s=SETTINGS.frame_timeout_s,
@@ -100,13 +100,13 @@ alert = app.add(
         decide=router,
         llm=llm,
         vlm=vlm,
-        output=voice,
-        history=voice.dialogue,
+        output=dialogue,
+        history=dialogue.log,
         saved=notes,
         check_every_s=SETTINGS.alert_check_interval_s,
     )
 )
-note_taking = app.add(NoteTaking(router, voice, notes))
+note_taking = app.add(NoteTaking(router, dialogue, notes))
 
 ack = None
 if SETTINGS.ack_delay_s is not None:
@@ -121,9 +121,9 @@ routing = app.add(
             note_taking.notes,
         ],
         default=chat,
-        history=voice.dialogue,
+        history=dialogue.log,
         history_budget_bytes=SETTINGS.routing_history_budget_bytes,
-        output=voice,
+        output=dialogue,
         ack=ack,
     )
 )

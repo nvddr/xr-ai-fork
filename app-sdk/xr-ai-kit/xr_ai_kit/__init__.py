@@ -4,15 +4,16 @@
 """The XR-AI kit: common app patterns built only from ``xr_ai_app``'s public names.
 
 The core (``xr_ai_app``) holds the primitives that need the runtime, the hub or the model binding; everything here is
-composed from them, however common. Modules: ``xr_ai_kit.conversation`` (answers with a tool loop),
-``.routing`` (also ``choose``, the pick the Router is built on, and the devkit's ``destination:`` exercise target),
-``.delegate`` (also the job back ends ``FunctionBackend`` and ``A2ABackend``, extra ``xr-ai-kit[a2a]``), ``.sop``
-(standard operating procedures: steps as plain async functions and ``SopRunner``) and ``.langchain`` (adapters, extra
-``xr-ai-kit[langchain]``).
+composed from them, however common. Modules: ``xr_ai_kit.conversation`` (answers with a tool loop), ``.dialogue``
+(speech out that keeps the dialogue log), ``.routing`` (also ``choose``, the pick the Router is built on, and the
+devkit's ``destination:`` exercise target), ``.delegate`` (also the job back ends ``FunctionBackend`` and
+``A2ABackend``, extra ``xr-ai-kit[a2a]``), ``.sop`` (standard operating procedures: steps as plain async functions and
+``SopRunner``) and ``.langchain`` (adapters, extra ``xr-ai-kit[langchain]``).
 
 ======================  =================================================================
 Answers                 Conversation (multi-turn answers over listed context, with a tool
-                        loop over ``@tool`` functions)
+                        loop over ``@tool`` functions), Dialogue (speech out that keeps
+                        what was said, ``dialogue.log``)
 Routing                 Router, OneShotDestination (a plain handler), StartStopDestination
                         (a mode started and stopped by asking), RouterDestination (any
                         custom destination: ``admit`` and ``focused`` hooks),
@@ -26,6 +27,7 @@ from __future__ import annotations
 
 from .conversation import Conversation
 from .delegate import Delegate, Job
+from .dialogue import Dialogue
 from .routing import (
     Ack,
     Admission,
@@ -42,6 +44,7 @@ __all__ = [
     "Conversation",
     "Delegate",
     "DestinationResult",
+    "Dialogue",
     "Job",
     "OneShotDestination",
     "Router",

@@ -5,8 +5,8 @@
 
 - ``p.state`` lives as long as the participant is enrolled; ``p.session.state`` starts empty on every (re)connect;
   ``turn.state`` is one turn's scratch state.
-- ``p.say/reply/withdraw(..., to=sink)``: the output names where it goes (``Voice``, ``TextSink``...); without ``to``
-  the app's speech output is used.
+- ``p.say/reply/withdraw(..., to=sink)``: the output names where it goes (``TextSink``, the kit's ``Dialogue``...);
+  without ``to`` the app's speech output is used.
 - ``p.spawn`` runs work in the participant's scope and carries the trace ids into the task.
 """
 
@@ -245,11 +245,11 @@ class Participant:
     ) -> None:
         """Speak one complete message on the assistant's own initiative.
 
-        ``to`` names the output (a sink such as ``Voice`` or ``TextSink``, or a list of them); ``to=None`` speaks on
-        the app's speech output (the voice pipeline ``app.yaml`` configures; a test session's hub). ``urgent``
-        interrupts lower-priority output. ``source`` tags the utterance: a queued, not yet spoken utterance with the
-        same ``source`` is replaced by this one (latest wins), and :meth:`withdraw` removes it. A silent no-op once
-        the participant's scope stopped admitting or the runtime closed (rule R6.1).
+        ``to`` names the output (a sink such as ``TextSink`` or the kit's ``Dialogue``, or a list of them);
+        ``to=None`` speaks on the app's speech output (the voice pipeline ``app.yaml`` configures; a test session's
+        hub). ``urgent`` interrupts lower-priority output. ``source`` tags the utterance: a queued, not yet spoken
+        utterance with the same ``source`` is replaced by this one (latest wins), and :meth:`withdraw` removes it. A
+        silent no-op once the participant's scope stopped admitting or the runtime closed (rule R6.1).
         """
         if to is None:
             await self._say_default(text, urgent=urgent, source=source)

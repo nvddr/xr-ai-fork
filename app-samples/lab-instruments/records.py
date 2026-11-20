@@ -20,10 +20,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from xr_ai_app import (
     Component,
     Participant,
-    Voice,
     current_turn,
     tool,
 )
+from xr_ai_kit import Dialogue
 from xr_ai_tools.marker_tracking import MarkerType
 
 
@@ -119,8 +119,9 @@ class Records(Component):
 # -- what foreground.jsonl needs from a turn ---------------------------------
 
 
-class AnswerVoice(Voice):
-    """`Voice` that also keeps the turn's answer (the conversation's reply)."""
+class AnswerDialogue(Dialogue):
+    """`Dialogue` that also keeps the turn's answer (the conversation's
+    reply)."""
 
     async def reply(
         self, p: Participant, text: str | AsyncIterable[str]

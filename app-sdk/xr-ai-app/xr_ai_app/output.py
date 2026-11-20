@@ -3,13 +3,13 @@
 
 """Outputs: where what the assistant says goes (``p.say(..., to=sink)``, ``p.reply(..., to=sink)``).
 
-A :class:`Sink` is any object with ``say``, ``reply`` and ``withdraw`` taking the participant first. ``Voice`` is the
-usual one. :class:`TextSink` records text only (for typed-only apps and tests).
+A :class:`Sink` is any object with ``say``, ``reply`` and ``withdraw`` taking the participant first; the kit's
+``xr_ai_kit.Dialogue`` is the usual one. :class:`TextSink` records text only (for typed-only apps and tests).
 """
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from ._base import _tracing
@@ -54,16 +54,6 @@ def output_started() -> bool:
     answer has started). ``False`` outside a turn."""
     state = getattr(CURRENT_TURN.get(), "state", None)
     return bool(state is not None and state.get("_output_started"))
-
-
-async def mark_first(stream: AsyncIterable[str], on_first: object) -> AsyncIterator[str]:
-    """Pass ``stream`` through, calling ``on_first()`` before the first non-empty fragment."""
-    first = True
-    async for part in stream:
-        if first and part:
-            first = False
-            on_first()  # type: ignore[operator]
-        yield part
 
 
 class TextSink:
