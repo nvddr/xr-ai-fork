@@ -70,7 +70,18 @@ class VoiceConfig:
     """Voice-activity settings; ``None`` uses the voice package defaults."""
 
     voice_gate_yaml: Path | None = None
-    """Voice-gate file; the speech models themselves come from the ``speech_in``/``speech_out`` roles."""
+    """Voice-gate file (relative to ``app.yaml``); ``None`` uses ``voice_gate.yaml`` beside ``app.yaml``."""
+
+    speech_in: str | None = None
+    """The role that hears speech (speech to text); ``None`` uses the profile's ``speech_in`` role, else its entry
+    named ``stt``."""
+
+    speech_out: str | None = None
+    """The role that speaks (text to speech); ``None`` uses the profile's ``speech_out`` role, else its entry named
+    ``tts``."""
+
+    text_input: bool = True
+    """Whether typed messages from the device count as turns."""
 
     idle_timeout_s: float | None = None
     """Seconds without activity after which the voice pipeline's idle timeout fires; ``None`` disables it."""
@@ -106,7 +117,16 @@ class AppConfig:
 
 
 _TOP_KEYS = {"profile", "voice", "artifacts_dir", "timeouts", "settings", "trace"}
-_VOICE_KEYS = {"enabled", "vad", "voice_gate_yaml", "idle_timeout_s", "interrupt_on_supersede"}
+_VOICE_KEYS = {
+    "enabled",
+    "vad",
+    "voice_gate_yaml",
+    "speech_in",
+    "speech_out",
+    "text_input",
+    "idle_timeout_s",
+    "interrupt_on_supersede",
+}
 
 
 def _path(config_dir: Path, value: Any) -> Path | None:
@@ -135,6 +155,9 @@ def _load_config(path: str | Path) -> AppConfig:
         )  # noqa: PLC0415 - keeps the app module free of the voice stack
 
         vad = VadConfig(**voice_raw["vad"])
+    for key in ("speech_in", "speech_out"):
+        if voice_raw.get(key) is not None and not isinstance(voice_raw[key], str):
+            raise ValueError(f"{file}: voice.{key} must be a role name, got {voice_raw[key]!r}")
     settings = raw.get("settings") or {}
     if not isinstance(settings, dict):
         raise ValueError(f"{file}: settings must be a mapping")
@@ -164,6 +187,9 @@ def _load_config(path: str | Path) -> AppConfig:
             enabled=bool(voice_raw.get("enabled", True)),
             vad=vad,
             voice_gate_yaml=_path(config_dir, voice_raw.get("voice_gate_yaml")),
+            speech_in=voice_raw.get("speech_in"),
+            speech_out=voice_raw.get("speech_out"),
+            text_input=bool(voice_raw.get("text_input", True)),
             idle_timeout_s=(None if voice_raw.get("idle_timeout_s") is None else float(voice_raw["idle_timeout_s"])),
             interrupt_on_supersede=bool(voice_raw.get("interrupt_on_supersede", True)),
         ),
@@ -202,8 +228,8 @@ def _parked(task: asyncio.Task[Any]) -> bool:
 
 
 def _default_voice_factory(app: App) -> Any:
-    """Build the voice agent of an app made by ``App.from_config`` (see :mod:`._voice`)."""
-    from ._voice import build_voice_agent  # noqa: PLC0415 - keeps the app module free of the voice stack
+    """Build the voice agent of an app made by ``App.from_config`` (see :mod:`._voice_runtime`)."""
+    from ._voice_runtime import build_voice_agent  # noqa: PLC0415 - keeps the app module free of the voice stack
 
     if not app._config.voice.enabled:
         return None

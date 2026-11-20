@@ -56,7 +56,6 @@ router = app.role("router")
 vlm = app.role("vlm")
 voice = app.add(
     Voice(
-        tts=app.role("tts"),
         summarize=llm,  # folds old dialogue into a summary
         dialogue_budget_bytes=SETTINGS.dialogue_budget_bytes,
     )

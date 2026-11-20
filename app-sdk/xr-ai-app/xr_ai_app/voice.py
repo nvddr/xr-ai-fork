@@ -13,8 +13,7 @@ writer of that log.
 from __future__ import annotations
 
 from collections.abc import AsyncIterable
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from ._base.component import Component
 from .context import ContextLog
@@ -28,10 +27,8 @@ if TYPE_CHECKING:
 class Voice(Component):
     """Speech out, and the dialogue log (``voice.dialogue``).
 
-    ``summarize`` compacts the dialogue when it outgrows ``dialogue_budget_bytes``. ``stt`` and ``tts`` are the
-    speech roles (``app.role(...)``; default: the profile's ``speech_in`` and ``speech_out``, else its ``stt`` and
-    ``tts`` entries), ``gate`` the voice-gate file (relative to ``app.yaml``; default: ``voice.voice_gate_yaml``,
-    else ``voice_gate.yaml`` beside it), ``text_input`` whether typed messages from the device count as turns.
+    ``summarize`` compacts the dialogue when it outgrows ``dialogue_budget_bytes``. The speech roles, the voice
+    gate and typed input are app settings (``app.yaml``'s ``voice:`` section).
     """
 
     def __init__(
@@ -39,15 +36,10 @@ class Voice(Component):
         *,
         summarize: Role | None = None,
         dialogue_budget_bytes: int = 8_000,
-        stt: Role | None = None,
-        tts: Role | None = None,
-        gate: str | Path | None = None,
-        text_input: bool = True,
         name: str = "voice",
     ) -> None:
         super().__init__()
         self._name = name
-        self._speech: dict[str, Any] = {"stt": stt, "tts": tts, "gate": gate, "text_input": text_input}
         self.dialogue = ContextLog(
             "dialogue", scope="participant", budget_bytes=dialogue_budget_bytes, summarize=summarize
         )

@@ -62,7 +62,6 @@ tea_procedure = TeaProcedure(
 )
 voice = app.add(
     Voice(
-        tts=app.role("speech_out"),
         summarize=answer_with_reasoning,
         dialogue_budget_bytes=SETTINGS.dialogue_budget_bytes,
     )

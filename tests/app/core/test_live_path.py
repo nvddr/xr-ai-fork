@@ -18,10 +18,10 @@ from typing import Any
 
 import pytest
 from PIL import Image
-from xr_ai_app import App, Hub, Participant, PerConnection, Turn, Voice
+from xr_ai_app import App, Hub, Participant, PerConnection, Turn
 from xr_ai_app._base import _bound, _ready
 from xr_ai_app._base._frames_feed import client_pictures, hub_endpoint
-from xr_ai_app._base._voice import build_voice_agent
+from xr_ai_app._base._voice_runtime import build_voice_agent
 from xr_ai_app.testing import solid_frame
 from xr_ai_hub._types import ImageCaptureData
 
@@ -130,9 +130,12 @@ def test_the_sdk_tour_launcher_runs_each_samples_app_with_its_own_project_and_th
 
 
 async def test_upstreams_files_give_required_speaker_asr_and_the_tts_entry(tmp_path) -> None:
-    path = _upstream_app(tmp_path, "profile: yaml/models.json\nvoice: {voice_gate_yaml: yaml/voice_gate.yaml}\n")
+    path = _upstream_app(
+        tmp_path,
+        "profile: yaml/models.json\n"
+        "voice: {voice_gate_yaml: yaml/voice_gate.yaml, speech_out: tts, text_input: false}\n",
+    )
     app = App.from_config(path, enrollment=PerConnection(admit=None))
-    app.add(Voice(tts=app.role("tts"), text_input=False))
     voice = build_voice_agent(app, app._load_profile())
     session = voice._session
     speaker = session.voice_gate._speaker
@@ -140,7 +143,7 @@ async def test_upstreams_files_give_required_speaker_asr_and_the_tts_entry(tmp_p
     assert session.voice_gate._mode == "conversation"
     assert session.stt is None  # speaker-only, as upstream's worker: no batch STT client
     assert session.tts is app._closeables[-1]  # the app closes it
-    assert voice.text_input is False  # Voice(text_input=...) reaches the voice agent
+    assert voice.text_input is False  # voice.text_input in app.yaml reaches the voice agent
     assert set(app._probes) == {"tts"}  # speech out is waited for before ready
     assert app._agent_status == session.transport.endpoint.set_status
     await _close(app, voice)
@@ -178,13 +181,20 @@ async def test_a_speaker_speech_in_turns_speaker_asr_on_and_a_batch_one_leaves_t
     await _close(app, voice)
 
 
-async def test_voice_gate_from_the_component_wins_over_app_yaml(tmp_path) -> None:
-    path = _upstream_app(tmp_path, "profile: yaml/models.json\n")  # no voice_gate_yaml: the default would be used
+async def test_the_voice_gate_named_in_app_yaml_wins_over_the_one_beside_it(tmp_path) -> None:
+    path = _upstream_app(tmp_path, "profile: yaml/models.json\nvoice: {voice_gate_yaml: yaml/voice_gate.yaml}\n")
+    gate = (UPSTREAM / "voice_gate.yaml").read_text()
+    (tmp_path / "voice_gate.yaml").write_text(gate.replace("backend: required", "backend: auto"))
     app = App.from_config(path, enrollment=PerConnection(admit=None))
-    app.add(Voice(gate="yaml/voice_gate.yaml"))
     voice = build_voice_agent(app, app._load_profile())
     assert voice._session.voice_gate._speaker.backend == "required"
     await _close(app, voice)
+
+
+def test_speech_roles_in_app_yaml_are_role_names(tmp_path) -> None:
+    path = _upstream_app(tmp_path, "profile: yaml/models.json\nvoice: {speech_out: 3}\n")
+    with pytest.raises(ValueError, match="voice.speech_out must be a role name"):
+        App.from_config(path, enrollment=PerConnection(admit=None))
 
 
 # --- the on-demand picture -------------------------------------------------------------------------------------------

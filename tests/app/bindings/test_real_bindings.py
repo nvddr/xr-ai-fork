@@ -16,7 +16,7 @@ import pytest
 from pydantic import BaseModel
 from xr_ai_app._base import _bound
 from xr_ai_app._base import app as app_module
-from xr_ai_app._base._voice import build_voice_agent, models_for_voice
+from xr_ai_app._base._voice_runtime import build_voice_agent, models_for_voice
 from xr_ai_app._base.app import App
 from xr_ai_app._base.enrollment import PerConnection
 from xr_ai_app._base.frames import Frame
@@ -452,7 +452,7 @@ async def test_from_config_app_start_stop_with_voice_built_by_the_factory(tmp_pa
             events.append("request_stop")
             self.stopped.set()
 
-    monkeypatch.setattr("xr_ai_app._base._voice.build_voice_agent", lambda _app, _profile: Voice())
+    monkeypatch.setattr("xr_ai_app._base._voice_runtime.build_voice_agent", lambda _app, _profile: Voice())
     await app.start()
     await asyncio.sleep(0.01)
     await app.stop()

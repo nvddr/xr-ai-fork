@@ -34,23 +34,13 @@ def models_for_voice(profile: Profile, speech_in: str = "speech_in") -> ModelsCo
     return ModelsConfig(entries)
 
 
-def _speech(app: App) -> dict[str, Any]:
-    """The ``Voice`` component's speech settings (``stt``, ``tts``, ``gate``, ``text_input``), or the defaults."""
-    from ..voice import Voice  # noqa: PLC0415 - the public module imports this package
-
-    for component in app._components:
-        if isinstance(component, Voice):
-            return dict(component._speech)
-    return {"stt": None, "tts": None, "gate": None, "text_input": True}
-
-
 def build_voice_agent(app: App, profile: Profile) -> VoiceAgent | None:
     """Build the voice agent for ``app``: speech models, voice gate, hub transport and topics.
 
-    Returns ``None`` when ``voice.enabled`` is false. Speech in and out are the ``Voice`` component's ``stt`` and
-    ``tts`` roles when it names them, else the profile's ``speech_in`` and ``speech_out`` roles, else its entries named
-    ``stt`` and ``tts`` (what the voice package itself reads, so an upstream ``models.json`` works unchanged). The voice
-    gate is ``Voice(gate=...)``, else ``voice.voice_gate_yaml``, else ``voice_gate.yaml`` beside ``app.yaml``. That
+    Returns ``None`` when ``voice.enabled`` is false. Speech in and out are the roles ``app.yaml`` names
+    (``voice.speech_in``, ``voice.speech_out``), else the profile's ``speech_in`` and ``speech_out`` roles, else its
+    entries named ``stt`` and ``tts`` (what the voice package itself reads, so an upstream ``models.json`` works
+    unchanged). The voice gate is ``voice.voice_gate_yaml``, else ``voice_gate.yaml`` beside ``app.yaml``. That
     file decides whether speaker ASR is on; a ``speech_in`` entry that is the speaker service turns it on at its own
     endpoint (any other ``speech_in`` leaves the file in force). The agent never installs signal handlers (R7.3);
     ``App.stop`` ends it through ``request_stop``. ``app`` closes the TTS client, waits for it (and every bound role)
@@ -63,16 +53,11 @@ def build_voice_agent(app: App, profile: Profile) -> VoiceAgent | None:
     config = app._config
     if not config.voice.enabled:
         return None
-    speech = _speech(app)
-    speech_in = getattr(speech["stt"], "name", None) or "speech_in"
-    speech_out = getattr(speech["tts"], "name", None) or ("speech_out" if _has(profile, "speech_out") else "tts")
+    speech_in = config.voice.speech_in or "speech_in"
+    speech_out = config.voice.speech_out or ("speech_out" if _has(profile, "speech_out") else "tts")
     url = profile.speaker_asr_base_url(speech_in)
     gate_kwargs: dict[str, Any] = {} if url is None else {"speaker_base_url": url, "speaker_enabled": True}
-    gate_file = (
-        config.config_dir / speech["gate"]
-        if speech["gate"] is not None
-        else config.voice.voice_gate_yaml or config.config_dir / "voice_gate.yaml"
-    )
+    gate_file = config.voice.voice_gate_yaml or config.config_dir / "voice_gate.yaml"
     voice_gate = load_voice_gate_config(gate_file, **gate_kwargs)
     entry = profile.resolve(speech_out)
     tts = make_tts(profile.models, entry)
@@ -87,7 +72,7 @@ def build_voice_agent(app: App, profile: Profile) -> VoiceAgent | None:
         vad=config.voice.vad or VadConfig(),
         voice_gate=voice_gate,
         ready_file=app._ready_file,
-        text_input=bool(speech["text_input"]),
+        text_input=config.voice.text_input,
         participant_joined_topic=None,  # presence has one publisher, the Hub component (D-323a, R8.4)
         participant_left_topic=None,
         interrupted_topic=INTERRUPTED,

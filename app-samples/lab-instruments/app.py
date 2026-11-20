@@ -70,7 +70,7 @@ FRAMES = {
 app.add(Hub())  # the device connection: who is here, and their camera
 llm = app.role("llm")
 vlm = app.role("vlm")
-voice = app.add(AnswerVoice(tts=app.role("tts")))
+voice = app.add(AnswerVoice())
 records = app.add(Records())
 # What the monitors noticed, newest last; the conversation reads it.
 history = ContextLog(

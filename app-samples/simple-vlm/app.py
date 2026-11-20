@@ -25,7 +25,7 @@ SYSTEM = (HERE / "prompts" / "system.txt").read_text(encoding="utf-8")
 app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here, and their camera
 vlm = app.role("vlm")  # roles are the entry names of yaml/models.json
-voice = app.add(Voice(tts=app.role("tts")))
+voice = app.add(Voice())
 
 
 @app.on_turn
