@@ -26,7 +26,6 @@ from pathlib import Path
 
 from xr_ai_app import (
     App,
-    ContextLog,
     Hub,
     Participant,
     PerConnection,
@@ -39,6 +38,7 @@ from xr_ai_kit import (
     OneShotDestination,
     Router,
     StartStopDestination,
+    SummarizingLog,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -53,7 +53,7 @@ dialogue = app.add(Dialogue(summarize=lightweight))
 # The notes, as text the conversation can read (so "read my notes back" is
 # a question for it). Participant scope: they outlive a reconnect when
 # enrollment is persistent.
-notes = ContextLog(
+notes = SummarizingLog(
     "notes", scope="participant", budget_bytes=4_000, summarize=lightweight
 )
 

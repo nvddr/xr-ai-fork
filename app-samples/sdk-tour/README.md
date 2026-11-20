@@ -153,7 +153,7 @@ the `tests/` project, not the samples' own).
 | 01 | hello-voice | one handler | `Dialogue`, `Conversation`, `app.on_turn`, the dialogue log |
 | 02 | vision-qa | a conversation with a tool | `@tool`, `p.frames`, `perceive.ask`; **test_app.py**: fake models, the trace in tests |
 | 03 | camera-monitor | proactive | a loop per participant, a structured read per frame, a yes streak per condition, `p.say(urgent=)`, `ContextValue`, tools that change state |
-| 04 | notes-mode | router + sticky mode | `Router`, `OneShotDestination` (the conversation), `StartStopDestination` (a mode started and stopped by asking, holding focus; a question is declined and routed elsewhere), `ContextLog` |
+| 04 | notes-mode | router + sticky mode | `Router`, `OneShotDestination` (the conversation), `StartStopDestination` (a mode started and stopped by asking, holding focus; a question is declined and routed elsewhere), `SummarizingLog` |
 | 05 | manual-dispatch | routing by hand | `decide.decide()` and a dict lookup, with no Router: code rules, a two-level menu, your own fallback |
 | 06 | shared-room | multi-party | `app.state`, app-scoped context, `app.participants`, `Persistent` enrollment |
 | 07 | delegate-a2a | front end + another agent | `Delegate`, `A2ABackend`: long work runs on any A2A (Agent2Agent) agent; its progress and result become context and speech; cancel sends A2A `tasks/cancel` |

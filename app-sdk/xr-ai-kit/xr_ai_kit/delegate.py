@@ -30,6 +30,8 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 from xr_ai_app import Component, ContextLog, ContextValue, trace
 from xr_ai_app.clock import held
 
+from .context import SummarizingLog
+
 if TYPE_CHECKING:
     from xr_ai_app import Participant, Role, Sink
 
@@ -250,8 +252,12 @@ class Delegate(Component):
         self._progress_every_s = progress_every_s
         self._max_running = max_running
         self.status = ContextValue(f"{name} jobs", scope="session", budget_bytes=status_budget_bytes)
-        self.results = ContextLog(
-            f"{name} results", scope="session", budget_bytes=results_budget_bytes, summarize=summarize
+        self.results = (
+            ContextLog(f"{name} results", scope="session", budget_bytes=results_budget_bytes)
+            if summarize is None
+            else SummarizingLog(
+                f"{name} results", scope="session", budget_bytes=results_budget_bytes, summarize=summarize
+            )
         )
 
     @property

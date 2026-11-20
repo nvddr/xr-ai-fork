@@ -206,7 +206,8 @@
         "OneShotDestination",
         "Router",
         "RouterDestination",
-        "StartStopDestination"
+        "StartStopDestination",
+        "SummarizingLog"
       ]
     },
     "xr_ai_kit.langchain": {

@@ -66,7 +66,8 @@ repository root for the full graph.
   speaks on the assistant's own initiative (`dialogue`, the kit's `Dialogue`,
   also keeps what was said, `dialogue.log`).
 - **Context is explicit.** A model sees exactly the channels listed in its
-  `context=[...]`. Channels are `ContextLog` (append, summarized when full)
+  `context=[...]`. Channels are `ContextLog` (append; the oldest dropped when
+  full, or summarized by a model role with the kit's `SummarizingLog`)
   or `ContextValue` (replaced); each names its scope: `app`, `participant`,
   `session`.
 - **State has a lifetime.** `app.state`, `p.state` (the participant),

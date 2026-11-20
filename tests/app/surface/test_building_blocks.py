@@ -14,7 +14,7 @@ from xr_ai_app import Component, ContextLog, ContextValue, Participant, PerConne
 from xr_ai_app._base.app import App, AppConfig
 from xr_ai_app.testing import FakeModels
 from xr_ai_app.trace import Event, JsonlSink, MemorySink, Tracer
-from xr_ai_kit import Ack, Admission, DestinationResult, Router, RouterDestination
+from xr_ai_kit import Ack, Admission, DestinationResult, Router, RouterDestination, SummarizingLog
 from xr_ai_kit.routing import choose
 
 
@@ -86,9 +86,9 @@ async def test_a_context_channels_changes_run_now_then_after_each_change_and_non
     await own.aclose()
 
 
-async def test_context_log_summarizes_in_the_background() -> None:
+async def test_a_summarizing_log_summarizes_in_the_background() -> None:
     models = FakeModels({"sum": ["the user likes tea"]})
-    log = ContextLog("notes", scope="participant", budget_bytes=60, summarize=models.role("sum"))
+    log = SummarizingLog("notes", scope="participant", budget_bytes=60, summarize=models.role("sum"))
     p = Participant("p")
     for i in range(6):
         await log.publish(p, f"note number {i}")

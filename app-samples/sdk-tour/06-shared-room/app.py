@@ -21,14 +21,13 @@ from pathlib import Path
 
 from xr_ai_app import (
     App,
-    ContextLog,
     ContextValue,
     Hub,
     Participant,
     Persistent,
     tool,
 )
-from xr_ai_kit import Conversation, Dialogue
+from xr_ai_kit import Conversation, Dialogue, SummarizingLog
 
 HERE = Path(__file__).resolve().parent
 
@@ -46,7 +45,7 @@ dialogue = app.add(Dialogue(summarize=lightweight))
 app.state.checklist = dict.fromkeys(ITEMS, "")  # item -> who checked it
 
 # App scope: one log and one value for the whole room.
-room = ContextLog(
+room = SummarizingLog(
     "room", scope="app", budget_bytes=3_000, summarize=lightweight
 )
 checklist = ContextValue("checklist", scope="app", budget_bytes=600)

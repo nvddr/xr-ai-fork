@@ -107,7 +107,7 @@ internal files; their public names are re-exported at the top level)."""
 KIT = "xr-ai-kit"
 """The kit: patterns built from the core's public names. It depends on the core alone."""
 
-PUBLIC_KIT_MODULES = {"", ".conversation", ".routing", ".delegate", ".dialogue"}
+PUBLIC_KIT_MODULES = {"", ".conversation", ".routing", ".delegate", ".dialogue", ".context"}
 """What another kit may import from ``xr_ai_kit`` (its top level and public modules), as it may from the SDK. The
 kit itself is held to the SDK's public names like every kit, and imports no other kit."""
 

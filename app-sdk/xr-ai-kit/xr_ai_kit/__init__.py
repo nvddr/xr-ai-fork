@@ -5,15 +5,18 @@
 
 The core (``xr_ai_app``) holds the primitives that need the runtime, the hub or the model binding; everything here is
 composed from them, however common. Modules: ``xr_ai_kit.conversation`` (answers with a tool loop), ``.dialogue``
-(speech out that keeps the dialogue log), ``.routing`` (also ``choose``, the pick the Router is built on, and the
-devkit's ``destination:`` exercise target), ``.delegate`` (also the job back ends ``FunctionBackend`` and
-``A2ABackend``, extra ``xr-ai-kit[a2a]``), ``.sop`` (standard operating procedures: steps as plain async functions and
-``SopRunner``) and ``.langchain`` (adapters, extra ``xr-ai-kit[langchain]``).
+(speech out that keeps the dialogue log), ``.context`` (a context log that summarizes), ``.routing`` (also
+``choose``, the pick the Router is built on, and the devkit's ``destination:`` exercise target), ``.delegate`` (also
+the job back ends ``FunctionBackend`` and ``A2ABackend``, extra ``xr-ai-kit[a2a]``), ``.sop`` (standard operating
+procedures: steps as plain async functions and ``SopRunner``) and ``.langchain`` (adapters, extra
+``xr-ai-kit[langchain]``).
 
 ======================  =================================================================
 Answers                 Conversation (multi-turn answers over listed context, with a tool
                         loop over ``@tool`` functions), Dialogue (speech out that keeps
                         what was said, ``dialogue.log``)
+Context                 SummarizingLog (a context log whose oldest entries a model role
+                        folds into a summary)
 Routing                 Router, OneShotDestination (a plain handler), StartStopDestination
                         (a mode started and stopped by asking), RouterDestination (any
                         custom destination: ``admit`` and ``focused`` hooks),
@@ -25,6 +28,7 @@ Delegation              Delegate, Job
 
 from __future__ import annotations
 
+from .context import SummarizingLog
 from .conversation import Conversation
 from .delegate import Delegate, Job
 from .dialogue import Dialogue
@@ -50,4 +54,5 @@ __all__ = [
     "Router",
     "RouterDestination",
     "StartStopDestination",
+    "SummarizingLog",
 ]

@@ -6,8 +6,9 @@
 Speech itself (speech to text, the voice gate, text to speech, barge-in) is the app's voice pipeline, configured by
 ``app.yaml``'s ``voice:`` section and the profile's ``speech_in`` and ``speech_out`` roles. A ``Dialogue`` speaks
 through the participant's default output and keeps ``dialogue.log``, a participant-scoped context log named
-``dialogue`` of what the user said (each turn, recorded in :meth:`Dialogue.before_turn`, so the app's turn handler
-already finds it there) and what was spoken through this output. It is the only writer of that log: a direct
+``dialogue`` (a :class:`~xr_ai_kit.SummarizingLog` when given a ``summarize`` role) of what the user said (each
+turn, recorded in :meth:`Dialogue.before_turn`, so the app's turn handler already finds it there) and what was
+spoken through this output. It is the only writer of that log: a direct
 ``p.say`` or ``p.reply`` is not recorded.
 """
 
@@ -18,6 +19,8 @@ from typing import TYPE_CHECKING
 
 from xr_ai_app import Component, ContextLog
 from xr_ai_app.trace import note_output
+
+from .context import SummarizingLog
 
 if TYPE_CHECKING:
     from xr_ai_app import Participant, Role, Turn
@@ -42,7 +45,11 @@ class Dialogue(Component):
     ) -> None:
         super().__init__()
         self._name = name
-        self.log = ContextLog("dialogue", scope="participant", budget_bytes=budget_bytes, summarize=summarize)
+        self.log = (
+            ContextLog("dialogue", scope="participant", budget_bytes=budget_bytes)
+            if summarize is None
+            else SummarizingLog("dialogue", scope="participant", budget_bytes=budget_bytes, summarize=summarize)
+        )
 
     @property
     def name(self) -> str:

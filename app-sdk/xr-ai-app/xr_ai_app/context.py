@@ -15,9 +15,8 @@ scope           stored in                               lives as long as
 ==============  ======================================  =========================
 
 Two kinds. :class:`ContextValue` holds one text that each ``set`` replaces. :class:`ContextLog` appends entries,
-keeps recent ones word for word and, when it outgrows its budget, folds the oldest into a rolling summary with
-its ``summarize`` role, in the background (``publish`` never waits). Without a ``summarize`` role the oldest
-entries are dropped instead.
+keeps recent ones word for word and, when it outgrows its budget, drops the oldest (:meth:`ContextLog.compact`, the
+one step a subclass may override: the kit's ``xr_ai_kit.SummarizingLog`` folds them into a summary instead).
 
 A model sees exactly the channels a component lists (``xr_ai_kit.Conversation(context=[...])``); :func:`render`
 is how. A component that reacts to new text (an escalator that learns from the dialogue) follows
@@ -27,7 +26,6 @@ is how. A component that reacts to new text (an escalator that learns from the d
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
@@ -36,17 +34,11 @@ from ._base import _tracing as trace
 
 if TYPE_CHECKING:
     from ._base.participant import Participant
-    from ._base.profiles import Role
 
-__all__ = ["ContextChannel", "ContextLog", "ContextValue", "Scope", "render"]
+__all__ = ["ContextChannel", "ContextLog", "ContextValue", "Scope", "clip", "render"]
 
 Scope = Literal["app", "participant", "session"]
 _SCOPES = ("app", "participant", "session")
-
-_SUMMARY_PROMPT = (
-    "Fold these notes into the running summary. Keep names, numbers, decisions and anything the user asked "
-    "for; drop chit-chat. Answer with the new summary only, at most {limit} characters."
-)
 
 
 def clip(text: str, budget_bytes: int, *, keep: Literal["start", "end"] = "start") -> str:
@@ -151,17 +143,15 @@ class ContextValue(_Channel):
 @dataclass
 class _Log:
     entries: list[str] = field(default_factory=list)
-    summary: str = ""
     dropped: int = 0
-    folding: asyncio.Task[None] | None = None
+
+
+def _size(entries: Sequence[str]) -> int:
+    return sum(len(e.encode()) + 1 for e in entries)
 
 
 class ContextLog(_Channel):
-    """Entries appended by :meth:`publish`; the oldest are summarized (or dropped) to stay within budget."""
-
-    def __init__(self, name: str, *, scope: Scope, budget_bytes: int, summarize: Role | None = None) -> None:
-        super().__init__(name, scope=scope, budget_bytes=budget_bytes)
-        self._summarize = summarize
+    """Entries appended by :meth:`publish`; the oldest are dropped (:meth:`compact`) to stay within budget."""
 
     def _log(self, p: Participant | None) -> _Log:
         store = self._store(p)
@@ -171,39 +161,51 @@ class ContextLog(_Channel):
         return log
 
     async def publish(self, p: Participant | None, text: str) -> None:
-        """Append one entry. Returns at once; summarizing happens in the background."""
+        """Append one entry (cut to half the budget), keep the log within its budget (:meth:`compact`) and wake
+        :func:`changes`."""
         text = clip(text.strip(), self._budget // 2)
         if not text:
             return
         log = self._log(p)
         log.entries.append(text)
         trace.emit("context", self._name, op="publish", bytes=len(text.encode()))
-        self._compact(log)
+        self.compact(p, log.entries)
         self._notify(p)
+
+    def compact(self, p: Participant | None, entries: list[str]) -> None:
+        """Keep the log within its budget; called after each :meth:`publish`, with the log's own entries.
+
+        ``entries`` is the list :meth:`entries` copies, oldest first; it stays this log's (for ``p``) until
+        :meth:`clear`. When the entries outgrow the budget, this drops the oldest until they fill at most half of
+        it, and :meth:`view` says how many were dropped. A subclass overrides it to keep what it removes another
+        way (``xr_ai_kit.SummarizingLog`` folds it into a summary): it removes entries from the front of
+        ``entries``, now or later, and does not block (``publish`` never waits).
+        """
+        if _size(entries) <= self._budget:
+            return
+        target = self._budget // 2
+        removed = 0
+        while entries and _size(entries) > target:
+            entries.pop(0)
+            removed += 1
+        self._log(p).dropped += removed
 
     def entries(self, p: Participant | None) -> list[str]:
         """The entries kept word for word, oldest first (a copy)."""
         return list(self._log(p).entries)
 
-    def summary(self, p: Participant | None) -> str:
-        return self._log(p).summary
-
     async def clear(self, p: Participant | None) -> None:
-        log = self._log(p)
-        if log.folding is not None:
-            log.folding.cancel()
+        """Remove every entry (and the count of dropped ones) and wake :func:`changes`."""
         self._store(p)["log"] = _Log()
         trace.emit("context", self._name, op="clear")
         self._notify(p)
 
     async def view(self, p: Participant | None, *, budget_bytes: int | None = None) -> str:
-        """The summary (if any), then the newest entries that fit in ``budget_bytes``."""
+        """How many entries were dropped (if any), then the newest entries that fit in ``budget_bytes``."""
         log = self._log(p)
         budget = self._budget_for(budget_bytes)
         head = []
-        if log.summary:
-            head.append(f"(earlier, summarized) {log.summary}")
-        elif log.dropped:
+        if log.dropped:
             head.append(f"({log.dropped} earlier entries dropped)")
         lines: list[str] = []
         used = sum(len(h.encode()) + 1 for h in head)
@@ -215,50 +217,6 @@ class ContextLog(_Channel):
             used += size
         lines.reverse()
         return clip("\n".join([*head, *lines]), budget)
-
-    async def settle(self, p: Participant | None) -> None:
-        """Wait for a running summary to finish (tests and shutdown)."""
-        folding = self._log(p).folding
-        if folding is not None:
-            with contextlib.suppress(asyncio.CancelledError, Exception):
-                await folding
-
-    # ------------------------------------------------------------ compaction
-
-    def _size(self, log: _Log) -> int:
-        return len(log.summary.encode()) + sum(len(e.encode()) + 1 for e in log.entries)
-
-    def _compact(self, log: _Log) -> None:
-        if self._size(log) <= self._budget or log.folding is not None:
-            return
-        target = self._budget // 2
-        old: list[str] = []
-        while log.entries and self._size(log) > target:
-            old.append(log.entries.pop(0))
-        if not old:
-            return
-        if self._summarize is None:
-            log.dropped += len(old)
-            return
-        log.folding = asyncio.get_running_loop().create_task(self._fold(log, old), name=f"context-fold:{self._name}")
-
-    async def _fold(self, log: _Log, old: Sequence[str]) -> None:
-        limit = max(self._budget // 4, 64)
-        prompt = (f"Running summary:\n{log.summary}\n\n" if log.summary else "") + "New notes:\n" + "\n".join(old)
-        try:
-            assert self._summarize is not None
-            text = await self._summarize.ask(
-                None, prompt, system=_SUMMARY_PROMPT.format(limit=limit), thinking=False, max_tokens=256
-            )
-            log.summary = clip(str(text).strip(), limit)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:  # noqa: BLE001 - a failed summary drops the entries instead
-            log.dropped += len(old)
-            trace.emit("error", self._name, where="context summary", error=type(exc).__name__)
-        finally:
-            log.folding = None
-        self._compact(log)
 
 
 async def render(p: Participant | None, channels: Sequence[ContextChannel], *, budget_bytes: int | None = None) -> str:

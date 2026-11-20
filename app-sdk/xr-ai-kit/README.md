@@ -14,9 +14,10 @@ and test kit); anything composed from those lives here, however common.
 
 | Module | What |
 |---|---|
-| `xr_ai_kit` | `Conversation`, `Dialogue`, `Router`, `OneShotDestination`, `StartStopDestination`, `RouterDestination`, `DestinationResult`, `Admission`, `Ack`, `Delegate`, `Job` |
+| `xr_ai_kit` | `Conversation`, `Dialogue`, `SummarizingLog`, `Router`, `OneShotDestination`, `StartStopDestination`, `RouterDestination`, `DestinationResult`, `Admission`, `Ack`, `Delegate`, `Job` |
 | `xr_ai_kit.conversation` | `Conversation`: multi-turn answers from one role over the context channels it lists, spoken on an output, with a streaming tool loop over `@tool` functions (`xr_ai_app.tools` calls each tool); a `return_direct` tool's result (text, or a stream of text) is spoken as the answer and ends the loop; the loop speaks the answer, the tool returns it |
 | `xr_ai_kit.dialogue` | `Dialogue`: speech out (a sink: `say`, `reply`, `withdraw` through the participant's default output) that keeps `dialogue.log`, a participant-scoped context log of what the user said (recorded in `before_turn`, so the turn handler finds it) and what was spoken through it |
+| `xr_ai_kit.context` | `SummarizingLog`: a core `ContextLog` whose oldest entries a `summarize` role folds into a rolling summary in the background, instead of dropping them (it overrides the log's one `compact` step) |
 | `xr_ai_kit.routing` | the routing names, and `choose` (one pick for a turn: `role.decide` plus focus, retries and the dialogue); the devkit's `destination:<name>` exercise target (`resolve_destination`, `destinations`) |
 | `xr_ai_kit.delegate` | `Delegate`, `Job`, `JobUpdate` and the job back ends: `FunctionBackend`, `A2ABackend` (remote agents over A2A; extra `xr-ai-kit[a2a]`) |
 | `xr_ai_kit.sop` | standard operating procedures: steps (`steps`: what every step shares; `step_types`: `WatchStep`, `ReadStep`, `TransformStep`, `WaitStep`), an optional escalator beside a step (`escalation`), and `SopRunner`, which runs a procedure written as plain Python, one run per participant, with controls and a summary for the conversation (see below) |

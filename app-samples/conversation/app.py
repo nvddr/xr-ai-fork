@@ -27,8 +27,15 @@ from current_view import CurrentView
 from note_taking import NoteTaking
 from pydantic import BaseModel
 from visual_alert import VisualAlert
-from xr_ai_app import App, ContextLog, Hub, PerConnection
-from xr_ai_kit import Ack, Conversation, Dialogue, OneShotDestination, Router
+from xr_ai_app import App, Hub, PerConnection
+from xr_ai_kit import (
+    Ack,
+    Conversation,
+    Dialogue,
+    OneShotDestination,
+    Router,
+    SummarizingLog,
+)
 
 HERE = Path(__file__).resolve().parent
 PROMPTS = HERE / "prompts"
@@ -61,7 +68,7 @@ dialogue = app.add(
     )
 )
 # Participant-authored notes, as the conversation reads them.
-notes = ContextLog(
+notes = SummarizingLog(
     "notes",
     scope="participant",
     budget_bytes=SETTINGS.notes_budget_bytes,
