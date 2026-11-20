@@ -24,9 +24,9 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import ValidationError
 from xr_ai_app import Component, trace
+from xr_ai_app.chat import ChatMessage, ToolCall, ToolDef
 from xr_ai_app.clock import HeldStream
 from xr_ai_app.context import ContextChannel, render
-from xr_ai_app.llm import ChatMessage, ToolCall, ToolDef
 from xr_ai_app.tools import ToolSpec, describe
 
 if TYPE_CHECKING:

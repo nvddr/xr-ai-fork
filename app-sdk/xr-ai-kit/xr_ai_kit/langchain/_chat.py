@@ -34,7 +34,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import ConfigDict, Field, PrivateAttr
 from xr_ai_app import clock, trace
-from xr_ai_app.llm import ChatMessage, ChatResponse, ImagePart, TextPart, ToolCall, ToolDef
+from xr_ai_app.chat import ChatMessage, ChatResponse, ImagePart, TextPart, ToolCall, ToolDef
 
 __all__ = ["RoleChatModel", "chat_model", "to_chat_messages", "to_langchain_messages"]
 

@@ -96,7 +96,7 @@ PUBLIC_SDK_MODULES = {
     ".clock",
     ".trace",
     ".tools",
-    ".llm",
+    ".chat",
     ".context",
     ".devkit",
     ".testing",

@@ -6,7 +6,7 @@
 The core is what cannot be built from other public pieces (it needs the runtime, the hub or the model binding).
 Top-level names are for every app. Opt-in modules: ``xr_ai_app.trace`` (events and sinks), ``.clock`` (time that
 stays right on the devkit's virtual clock), ``.context`` (``render`` and the channel protocol), ``.tools`` and
-``.llm`` (tools as data and the raw model interface, for tool loops and adapters). Tools for developers: ``.devkit``
+``.chat`` (tools as data and the raw model interface, for tool loops and adapters). Tools for developers: ``.devkit``
 (run, exercise and serve an app without a headset) and ``.testing``. Patterns composed from these (Conversation with
 its tool loop, Router, Delegate, Dialogue) are the kit, ``xr-ai-kit`` (``xr_ai_kit``), with libraries for one kind of
 app or one framework beside them (``xr_ai_kit.sop`` for procedures, which also holds watching the camera over time,

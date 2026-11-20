@@ -21,7 +21,7 @@ private `xr_ai_app._base` package; its written contracts are
 | `xr_ai_app.context` | `render` (the listed channels as the text a model reads), `changes`, `clip` and the channel protocol; a `ContextLog` drops its oldest entries when full (`ContextLog.compact`, which the kit's `SummarizingLog` overrides) |
 | `xr_ai_app.trace` | trace events with causal ids, sinks, NeMo Relay export; `emit`, `span` for your own code |
 | `xr_ai_app.clock` | `now`, `wall_us`, `held`: time that stays right on the devkit's virtual clock |
-| `xr_ai_app.tools`, `xr_ai_app.llm` | for tool loops and adapters: tools as data (`describe`, `ToolSpec.call`/`.stream`, `ToolSpec.return_direct`), and the messages of `role.as_llm()` |
+| `xr_ai_app.tools`, `xr_ai_app.chat` | for tool loops and adapters: tools as data (`describe`, `ToolSpec.call`/`.stream`, `ToolSpec.return_direct`), and the messages of `role.as_llm()` |
 | `xr_ai_app.devkit` | the local device: scenarios, `exercise`, a virtual-time loop, an HTTP endpoint and the `xr-ai-dev` command |
 | `xr_ai_app.testing` | scripted models and test sessions |
 
