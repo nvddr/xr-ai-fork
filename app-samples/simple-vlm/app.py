@@ -18,7 +18,6 @@ being answered.
 from pathlib import Path
 
 from xr_ai_app import App, Hub, Participant, PerConnection, Turn
-from xr_ai_kit import Dialogue
 
 HERE = Path(__file__).resolve().parent
 SYSTEM = (HERE / "prompts" / "system.txt").read_text(encoding="utf-8")
@@ -26,16 +25,15 @@ SYSTEM = (HERE / "prompts" / "system.txt").read_text(encoding="utf-8")
 app = App.from_config(HERE / "app.yaml", enrollment=PerConnection(admit=None))
 app.add(Hub())  # the device connection: who is here, and their camera
 vlm = app.role("vlm")  # roles are the entry names of yaml/models.json
-dialogue = app.add(Dialogue())
 
 
 @app.on_turn
 async def answer(turn: Turn, p: Participant) -> None:
     frame = await p.frames.current(max_age_s=5.0, timeout_s=5.0)
     if frame is None:
-        await dialogue.reply(p, "I can't see anything right now.")
+        await p.reply("I can't see anything right now.")
         return
-    await dialogue.reply(p, vlm.stream(frame, turn.text, system=SYSTEM))
+    await p.reply(vlm.stream(frame, turn.text, system=SYSTEM))
 
 
 def main() -> None:

@@ -10,13 +10,12 @@ build-backend = "hatchling.build"
 [project]
 name = "xr-ai-app-sample-simple-vlm"
 version = "0.1.0"
-description = "Voice and text questions about the current camera view, on the xr-ai-app core and kit."
+description = "Voice and text questions about the current camera view, on the xr-ai-app core."
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "xr-ai-launcher",
     "xr-ai-logging",
     "xr-ai-app",
-    "xr-ai-kit",
 ]
 
 [dependency-groups]
@@ -27,7 +26,6 @@ dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
 xr-ai-launcher = { path = "../../utils/xr-ai-launcher", editable = true }
 xr-ai-logging  = { path = "../../utils/xr-ai-logging", editable = true }
 xr-ai-app      = { path = "../../app-sdk/xr-ai-app", editable = true }
-xr-ai-kit      = { path = "../../app-sdk/xr-ai-kit", editable = true }
 
 [project.scripts]
 simple_vlm = "main:run"

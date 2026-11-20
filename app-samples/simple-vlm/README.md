@@ -6,8 +6,7 @@
 # Simple VLM on the xr-ai-app core
 
 Upstream's [simple VLM example](../../agent-samples/simple-vlm-example/README.md)
-rebuilt on the `xr_ai_app` core and one kit component (`Dialogue`, the spoken
-output): the smallest complete
+rebuilt on the `xr_ai_app` core alone (no kit): the smallest complete
 voice-and-vision application. A participant asks a spoken or typed question
 about the current camera view. The app uses the newest video frame when the
 client is streaming; otherwise it asks the client for one picture for that
