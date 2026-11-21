@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+scenario: ../../scenarios/guide.yaml
+duration_s: 300
+schedule:
+- 0
+- 0
+- 35
+- 35.1
+- 35.1
+- 65
+- 65.1
+- 65.1
+- 90
+- 90.1
+- 110
+- 110.1
+- 270
+- 300
+controls:
+- at: 8
+  text: Start talking to me
+- at: 20
+  text: Start talking to me
+- at: 280
+  text: Stop talking to me
+no_reply:
+- 2
